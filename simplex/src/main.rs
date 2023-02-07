@@ -1,3 +1,3 @@
 pub fn main() {
-    println!("aled");
+    println!("Simplex visualization");
 }
