@@ -1,9 +1,8 @@
 [package]
-name = "simplex"
-description = "A simplex visualization"
+name = "algui"
 version = "0.1.0"
+description = "Framework to create interactive algorithm visualization"
 authors = ["Aloïs Rautureau", "Paul Adam", "Elie Dumont"]
 edition = "2021"
 
 [dependencies]
-algui = { path = "../algui", version = "0.1.0" }
