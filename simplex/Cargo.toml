@@ -1,0 +1,6 @@
+[package]
+name = "simplex"
+description = "A simplex visualization"
+version = "0.1.0"
+authors = ["Aloïs Rautureau", "Paul Adam", "Elie Dumont"]
+edition = "2021"
