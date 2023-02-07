@@ -1,17 +1,21 @@
 //! Implementation of the Simplex algorithm
 //! definition of the simplex object
 
-mod constraint;
-mod linear_function;
-mod point;
+pub mod constraint;
+pub mod linear_function;
+pub mod point;
+
+use linear_function::LinearFunction;
+use constraint::Constraints;
+
 
 /// Simplex object
 #[derive(Debug)]
 pub struct Simplex {
-    l_function: linear_function::Linear_function,
-    constraints: constraint::Constraints,
-    state: (linear_funtion::Linear_function, constraint::Constraints),
-    historic: Vec<(linear_function::Linear_function, constraint::Constraints)>,
+    l_function: LinearFunction,
+    constraints: Constraints,
+    state: (LinearFunction, Constraints),
+    historic: Vec<(LinearFunction, Constraints)>,
 }
 
 
@@ -44,7 +48,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_is_first_step(&self) -> bool {
+    fn test_is_first_step() {
         todo!();
     }
 
