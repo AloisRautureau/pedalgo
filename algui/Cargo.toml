@@ -5,4 +5,24 @@ description = "Framework to create interactive algorithm visualization"
 authors = ["Aloïs Rautureau", "Paul Adam", "Elie Dumont"]
 edition = "2021"
 
+[lib]
+crate-type = ["cdylib", "rlib"]
+
 [dependencies]
+winit = "0.28.1"
+env_logger = "0.10.0"
+log = "0.4.17"
+wgpu = "0.15.0"
+cfg-if = "1"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+console_error_panic_hook = "0.1.6"
+console_log = "0.2.0"
+wgpu = { version = "0.15", features = ["webgl"]}
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4.30"
+web-sys = { version = "0.3", features = [
+    "Document",
+    "Window",
+    "Element",
+]}
