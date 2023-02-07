@@ -1,9 +1,11 @@
 //! contraintes linéaire
 
+use crate::linear_function::LinearFunction;
+
 /// Contraintes object
 
 #[derive(Debug)]
-enum Operateur {
+pub enum Operator {
     Equal,
     Less,
     Greater,
@@ -14,17 +16,21 @@ enum Operateur {
 /// A Constraint is a linear function with an operator
 /// [linear_function] [operator] [0]
 #[derive(Debug)]
-struct Constraint {
-    pub left: linear_function::linear_function,
-    pub operateur : Operateur,
+pub struct Constraint {
+    pub left: LinearFunction,
+    pub operator: Operator,
 }
 
-pub impl Constraint {
-    pub fn new(left: linear_function::linear_function, operateur: Operateur, right: linear_function::linear_function) -> Constraint {
-        Constraint { left - right , operateur }
+pub type Constraints = Vec<Constraint>;
+
+impl Constraint {
+    pub fn new(left: LinearFunction, operator: Operator, right: LinearFunction) -> Constraint {
+        Constraint {
+            left: left - right,
+            operator,
+        }
     }
 }
-
 
 /*
 ------------------            _____
@@ -34,5 +40,5 @@ x + y <= 5;      |
 x <= 0;          |
 -----------------
 
-ET( linear_function, OP(l_f, operor, l_f),  
+ET( linear_function, OP(l_f, operor, l_f),
 */

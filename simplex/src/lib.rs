@@ -5,26 +5,29 @@ pub mod constraint;
 pub mod linear_function;
 pub mod point;
 
-use linear_function::LinearFunction;
 use constraint::Constraints;
-
+use linear_function::LinearFunction;
 
 /// Simplex object
 #[derive(Debug)]
 pub struct Simplex {
     l_function: LinearFunction,
     constraints: Constraints,
+    index: usize,
     state: (LinearFunction, Constraints),
     historic: Vec<(LinearFunction, Constraints)>,
 }
 
-
 impl Simplex {
-    fn is_first_step(&self) -> bool {
-        todo!();
+    fn is_first_step(&mut self) -> bool {
+        self.index == 0
     }
 
-    fn is_optimal(&self) -> bool {
+    fn is_optimal(&mut self) -> bool {
+        self.state.0.only_negative_coefficients()
+    }
+
+    fn pivot(&mut self) {
         todo!();
     }
 
@@ -41,7 +44,6 @@ impl Simplex {
         // function : clean_print (Terminal then GUI)
     }
 }
-
 
 #[cfg(test)]
 mod tests {
