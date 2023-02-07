@@ -10,17 +10,21 @@ mod point;
 pub struct Simplex {
     l_function: linear_function::Linear_function,
     constraints: constraint::Constraints,
-    state: (linear_funtion::Linear_function, constraint::Constraints),
-    historic: Vec<(linear_function::Linear_function, constraint::Constraints)>,
+    index: usize,
+    state: (linear_funtion::Linear_function, constrait::Constraints),
+    historic: Vec<(linear_function::Linear_function, constraint::Constraint)>,
 }
 
-
 impl Simplex {
-    fn is_first_step(&self) -> bool {
-        todo!();
+    fn is_first_step(&mut self) -> bool {
+        self.index == 0
     }
 
-    fn is_optimal(&self) -> bool {
+    fn is_optimal(&mut self) -> bool {
+        linear_function::all_is_negative(self.state.0)
+    }
+
+    fn pivot(&mut self) {
         todo!();
     }
 
@@ -37,7 +41,6 @@ impl Simplex {
         // function : clean_print (Terminal then GUI)
     }
 }
-
 
 #[cfg(test)]
 mod tests {
