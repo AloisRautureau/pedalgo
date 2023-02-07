@@ -14,7 +14,7 @@ impl std::ops::Add for Point {
     type Output = Point;
 
     fn add(self, p: Point) -> Self::Output {
-        let mut coordinates = Vec::new();
+        let mut coordinates: Vec<f32> = Vec::new();
         for i in 0..self.coordinates.len() {
             coordinates.push(self.coordinates[i] + p.coordinates[i]);
         }
