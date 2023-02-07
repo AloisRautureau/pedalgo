@@ -1,0 +1,2 @@
+//! points en n dimensions
+
