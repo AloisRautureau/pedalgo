@@ -8,14 +8,14 @@ pub mod point;
 use constraint::Constraints;
 use linear_function::LinearFunction;
 
+type LinearEquations = (LinearFunction, Constraints);
+
 /// Simplex object
 #[derive(Debug)]
 pub struct Simplex {
-    l_function: LinearFunction,
-    constraints: Constraints,
     index: usize,
-    state: (LinearFunction, Constraints),
-    historic: Vec<(LinearFunction, Constraints)>,
+    state: LinearEquations,
+    historic: Vec<LinearEquations>,
 }
 
 impl Simplex {
@@ -28,20 +28,38 @@ impl Simplex {
     }
 
     fn pivot(&mut self) {
+        // choix variable entrante
+        // choix variable sortante
+        // pivot
+        // mise à jour des coefficients
+        // mise à jour des contraintes
+        // mise à jour de la fonction objectif
         todo!();
     }
 
     /// Next step of the Simplex algorithm
-    pub fn next_step(&mut self) {
-        todo!();
-        // function : pivot
-        // function : clean_print (Terminal then GUI)
+    pub fn next_step(&mut self){
+        if !self.is_optimal() {
+            self.index += 1;
+            self.historic.push(self.state);
+            self.pivot();
+        }
+        println!("{}", self.state);
     }
 
     pub fn last_step(&mut self) {
-        todo!();
-        // function : pivot
-        // function : clean_print (Terminal then GUI)
+        if !self.is_first_step() {
+            self.index -= 1;
+            self.state = self.historic.pop().unwrap();
+        }
+        println!("{}", self.state);
+    }
+}
+
+impl std::fmt::Display for LinearEquations {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "{}", self.0)?;
+        writeln!(f, "{}", self.1);
     }
 }
 
@@ -66,6 +84,16 @@ mod tests {
 
     #[test]
     fn test_last_step() {
+        todo!();
+    }
+
+    #[test]
+    fn test_pivot() {
+        todo!();
+    }
+
+    #[test]
+    fn test_new() {
         todo!();
     }
 }
