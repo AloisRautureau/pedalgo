@@ -3,7 +3,7 @@
 /// Contraintes object
 
 #[derive(Debug)]
-enum Operateur {
+enum Operator {
     Equal,
     Less,
     Greater,
@@ -15,16 +15,17 @@ enum Operateur {
 /// [linear_function] [operator] [0]
 #[derive(Debug)]
 struct Constraint {
-    pub left: linear_function::linear_function,
-    pub operateur : Operateur,
+    pub left: linear_function::LinearFunction,
+    pub operator : Operator,
 }
+
+pub type Constraints = Vec<Constraint>;
 
 pub impl Constraint {
-    pub fn new(left: linear_function::linear_function, operateur: Operateur, right: linear_function::linear_function) -> Constraint {
-        Constraint { left - right , operateur }
+    pub fn new(left: linear_function::LinearFunction, operator: Operator, right: linear_function::LinearFunction) -> Constraint {
+        Constraint {left: left - right , operator}
     }
 }
-
 
 /*
 ------------------            _____
