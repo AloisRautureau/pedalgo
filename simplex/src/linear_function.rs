@@ -4,7 +4,7 @@ pub type Variable = String;
 
 #[derive(PartialEq, Debug)]
 pub struct LinearFunction {
-    constant: f32,
+    pub constant: f32,
     coefficients: HashMap<Variable, f32>,
 }
 impl LinearFunction {
@@ -13,6 +13,14 @@ impl LinearFunction {
         LinearFunction {
             constant,
             coefficients,
+        }
+    }
+
+    /// Creates a new linear function containing a single variable with coefficient 1
+    pub fn single_variable(var: Variable) -> LinearFunction {
+        LinearFunction {
+            constant: 0f32,
+            coefficients: HashMap::from([(var, 1f32)])
         }
     }
 
@@ -37,42 +45,33 @@ impl LinearFunction {
 
     /// Returns true if the function only has negative coefficients
     pub fn only_negative_coefficients(&self) -> bool {
-        todo!()
-    }
-}
-
-impl std::str::FromStr for LinearFunction {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        todo!()
-    }
-}
-
-impl std::fmt::Display for LinearFunction {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        fn coeff_to_string(var: &str, coeff: &f32) -> String {
-            format!(
-                "{}{var}",
-                if coeff == &1f32 {
-                    String::from("+ ")
-                } else if coeff.is_sign_negative() {
-                    format!("- {}", coeff.abs())
-                } else {
-                    format!("+ {coeff}")
-                }
-            )
+        for coeff in self.coefficients.values() {
+            if !coeff.is_sign_negative() {
+                return false
+            }
         }
-        write!(
-            f,
-            "{} {}",
-            self.constant,
-            self.coefficients
-                .iter()
-                .fold(String::new(), |acc, (var, coeff)| {
-                    acc + &coeff_to_string(var, coeff) + " "
-                })
-        )
+        true
+    }
+
+    /// Returns the variable with the maximal coefficient
+    pub fn max_coefficient(&self) -> (Variable, f32) {
+        self.coefficients
+            .into_iter()
+            .max_by(|(_, coeff_x), (_, coeff_y)| coeff_x.total_cmp(coeff_y))
+            .expect("searched for a max coefficient on a constant linear function")
+    }
+}
+
+impl std::ops::Index<Variable> for LinearFunction {
+    type Output = f32;
+
+    fn index(&self, index: Variable) -> &Self::Output {
+        self.coefficients.get(&index).unwrap_or(&0f32)
+    }
+}
+impl std::ops::IndexMut<Variable> for LinearFunction {
+    fn index_mut(&mut self, index: Variable) -> &Self::Output {
+        self.coefficients.entry(index).or_insert(0f32)
     }
 }
 
@@ -145,18 +144,6 @@ impl std::ops::SubAssign<LinearFunction> for LinearFunction {
     }
 }
 
-impl std::ops::Mul<LinearFunction> for LinearFunction {
-    type Output = LinearFunction;
-
-    fn mul(self, rhs: LinearFunction) -> Self::Output {
-        todo!()
-    }
-}
-impl std::ops::MulAssign<LinearFunction> for LinearFunction {
-    fn mul_assign(&mut self, rhs: LinearFunction) {
-        todo!()
-    }
-}
 impl std::ops::Mul<f32> for LinearFunction {
     type Output = LinearFunction;
 
@@ -188,18 +175,6 @@ impl std::ops::MulAssign<f32> for LinearFunction {
     }
 }
 
-impl std::ops::Div<LinearFunction> for LinearFunction {
-    type Output = LinearFunction;
-
-    fn div(self, rhs: LinearFunction) -> Self::Output {
-        todo!()
-    }
-}
-impl std::ops::DivAssign<LinearFunction> for LinearFunction {
-    fn div_assign(&mut self, rhs: LinearFunction) {
-        todo!()
-    }
-}
 impl std::ops::Div<f32> for LinearFunction {
     type Output = LinearFunction;
 
@@ -251,5 +226,44 @@ impl std::ops::Neg for LinearFunction {
                 .map(|(var, coeff)| (var.to_string(), -coeff))
                 .collect(),
         }
+    }
+}
+
+
+/*
+PARSE FUNCTIONS
+ */
+impl std::str::FromStr for LinearFunction {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        todo!()
+    }
+}
+
+impl std::fmt::Display for LinearFunction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        fn coeff_to_string(var: &str, coeff: &f32) -> String {
+            format!(
+                "{}{var}",
+                if coeff == &1f32 {
+                    String::from("+ ")
+                } else if coeff.is_sign_negative() {
+                    format!("- {}", coeff.abs())
+                } else {
+                    format!("+ {coeff}")
+                }
+            )
+        }
+        write!(
+            f,
+            "{} {}",
+            self.constant,
+            self.coefficients
+                .iter()
+                .fold(String::new(), |acc, (var, coeff)| {
+                    acc + &coeff_to_string(var, coeff) + " "
+                })
+        )
     }
 }
