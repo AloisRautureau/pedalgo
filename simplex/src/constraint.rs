@@ -1,5 +1,6 @@
 //! contraintes linéaire
 use crate::linear_function::LinearFunction;
+use crate::linear_function::Variable;
 
 /// Contraintes object
 
@@ -56,6 +57,15 @@ impl Constraint {
             },
         }
     }
+
+	// Normalizes a constraint with respect to a variable
+	pub fn normalize(&self, var: Variable) -> Constraint {
+		Constraint {
+			left: self.left.normalize(var),
+			operator: self.operator,
+			right: self.right.normalize(var),
+		}
+	}
 }
 
 impl std::fmt::Display for Operator {
