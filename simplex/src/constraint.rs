@@ -16,7 +16,7 @@ pub enum Operator {
 /// A Constraint is a linear function with an operator
 /// [linear_function] [operator] [0]
 #[derive(Debug, Clone)]
-struct Constraint {
+pub struct Constraint {
     pub left: LinearFunction,
     pub operator: Operator,
     pub right: LinearFunction,
