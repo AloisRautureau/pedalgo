@@ -1,5 +1,4 @@
 //! contraintes linéaire
-use std::collections::HashMap;
 use crate::linear_function::LinearFunction;
 
 /// Contraintes object
@@ -27,15 +26,13 @@ pub struct Constraints {
     inner: Vec<Constraint>,
 }
 
-
-
 impl Constraint {
     pub fn new(left: LinearFunction, operator: Operator, right: LinearFunction) -> Constraint {
         match operator {
             Operator::Equal => Constraint {
-                left: left - right ,
+                left: left - right,
                 operator: operator,
-                right: LinearFunction{constant: 0.0, coefficients: HashMap::new()},
+                right: LinearFunction::zero(),
             },
             Operator::Less => Constraint {
                 left: left,
@@ -82,7 +79,7 @@ impl std::fmt::Display for Constraint {
 impl std::fmt::Display for Constraints {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for constraint in self.inner.iter() {
-            writeln!(f, "{}", constraint)?;
+            writeln!(f, "{constraint}")?;
         }
         Ok(())
     }

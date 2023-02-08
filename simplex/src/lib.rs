@@ -26,9 +26,6 @@ impl LinearEquations {
         let current_state = self;
 
         if use_bland_rule {
-
-
-
         } else {
             todo!()
         }
