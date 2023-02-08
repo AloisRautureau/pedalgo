@@ -16,7 +16,7 @@ pub enum Operator {
 /// A Constraint is a linear function with an operator
 /// [linear_function] [operator] [0]
 #[derive(Debug, Clone)]
-pub struct Constraint {
+struct Constraint {
     pub left: LinearFunction,
     pub operator: Operator,
     pub right: LinearFunction,
@@ -27,33 +27,58 @@ pub struct Constraints {
     inner: Vec<Constraint>,
 }
 
+impl Operator {
+    /// ```rust
+    /// let a = Operator::Less;
+    /// let b = Operator::GreaterEqual;
+    /// assert_eq!(a.inverse(), b)
+    ///
+    /// let c = Operator::Greater;
+    /// let d = Operator::LessEqual;
+    /// assert_eq!(c.inverse(), d)
+    /// ```
+    pub fn inverse(&self) -> Operator {
+        match self {
+            Equal => Operator::Equal,
+            Less => Operator::GreaterEqual,
+            Greater => Operator::LessEqual,
+            LessEqual => Operator::Greater,
+            GreaterEqual => Operator::Less,
+        }
+    }
+}
+
 impl Constraint {
+    /// Create a new constraint with a left linear function, an operator and a right linear function
+    /// always with the form
+    ///     - [Zero] < [LinearFunction]
+    ///     - [Zero] <= [LinearFunction]
+    ///     - [Zero] =  [LinearFunction]
+    /// ```rust
+    /// use std::collections::HashMap;
+    /// use simplex::linear_function::LinearFunction;
+    ///
+    /// let lhs = LinearFunction::new(30f32, HashMap::from([(String::from("x"), 32f32), (String::from("z"), -5f32)]));
+    /// let rhs = LinearFunction::new(-5f32, HashMap::from([(String::from("y"), 12f32), (String::from("z"), 5f32)]));
+    /// let op = Operator::LessEqual;
+    /// let expected = Constraint {
+    ///    left: LinearFunction::zero(),
+    ///    operator: Operator::LessEqual,
+    ///    right: LinearFunction::new(-35f32, HashMap::from([(String::from("x"), -32f32), (String::from("y"), 12f32), (String::from("z"), 10f32)]))
+    /// };
+    /// assert_eq!(new(lhs,op,rhs), expected)
+    /// ```
     pub fn new(left: LinearFunction, operator: Operator, right: LinearFunction) -> Constraint {
         match operator {
-            Operator::Equal => Constraint {
-                left: left - right,
+            Operator::Less | Operator::LessEqual | Operator::Equal => Constraint {
+                left: LinearFunction::zero(),
                 operator: operator,
-                right: LinearFunction::zero(),
+                right: right - left,
             },
-            Operator::Less => Constraint {
-                left: left,
-                operator: operator,
-                right: right,
-            },
-            Operator::Greater => Constraint {
-                left: left,
-                operator: operator,
-                right: right,
-            },
-            Operator::LessEqual => Constraint {
-                left: -left,
-                operator: operator,
-                right: right,
-            },
-            Operator::GreaterEqual => Constraint {
-                left,
-                operator,
-                right,
+            Operator::Greater | Operator::GreaterEqual => Constraint {
+                left: LinearFunction::zero(),
+                operator: operator.inverse(),
+                right: left - right,
             },
         }
     }
@@ -66,6 +91,68 @@ impl Constraint {
 			right: self.right.normalize(var),
 		}
 	}
+}
+
+impl Constraints {
+    pub fn add_constraint(&mut self, constraint: Constraint) {
+        match constraint.operator {
+            Operator::Less => {
+                let constraint1 = Constraint {
+                    left: LinearFunction::zero(),
+                    operator: Operator::LessEqual,
+                    right: LinearFunction::zero(),
+                };
+                self.inner.push(constraint1);
+            }
+            Operator::Greater => {
+                let constraint1 = Constraint {
+                    left: LinearFunction::zero(),
+                    operator: Operator::LessEqual,
+                    right: LinearFunction::zero(),
+                };
+                self.inner.push(constraint1);
+            }
+            _ => {
+                let constraint1 = Constraint {
+                    left: LinearFunction::zero(),
+                    operator: Operator::LessEqual,
+                    right: LinearFunction::zero(),
+                };
+                self.inner.push(constraint1);
+            }
+        }
+    }
+}
+
+impl Constraints {
+    pub fn add_constraint(&mut self, constraint: Constraint) {
+        match constraint.operator {
+            Operator::Less => {
+                let constraint1 = Constraint {
+                    left: LinearFunction::zero(),
+                    operator: Operator::LessEqual,
+                    right: LinearFunction::zero(),
+                };
+                self.inner.push(constraint1);
+            }
+            Operator::Greater => {
+                let constraint1 = Constraint {
+                    left: LinearFunction::zero(),
+                    operator: Operator::LessEqual,
+                    right: LinearFunction::zero(),
+                };
+                self.inner.push(constraint1);
+            }
+            _ => {
+                let constraint1 = Constraint {
+                    left: LinearFunction::zero(),
+                    operator: Operator::LessEqual,
+                    right: LinearFunction::zero(),
+                };
+                self.inner.push(constraint1);
+            }
+        }
+    }
 }
 
 impl std::fmt::Display for Operator {
@@ -92,6 +179,30 @@ impl std::fmt::Display for Constraints {
             writeln!(f, "{constraint}")?;
         }
         Ok(())
+    }
+}
+
+/*
+OPERATOR OVERLOADING
+ */
+impl std::ops::Add<LinearFunction> for Constraint {
+    type Output = Constraint;
+
+    /// ```rust
+    /// use std::collections::HashMap;
+    /// use simplex::linear_function::LinearFunction;
+    ///
+    /// let c = LinearFunction::new(30f32, HashMap::from([(String::from("x"), 32f32), (String::from("z"), -5f32)]));
+    /// let l_f = LinearFunction::new(-5f32, HashMap::from([(String::from("y"), 12f32), (String::from("z"), 5f32)]));
+    /// let expected = LinearFunction::new(25f32, HashMap::from([(String::from("x"), 32f32), (String::from("y"), 12f32), (String::from("z"), 0f32)]));
+    /// assert_eq!(a + b, expected)
+    /// ```
+    fn add(self, rhs: LinearFunction) -> Self::Output {
+        Constraint {
+            left: self.left + rhs,
+            operator: self.operator,
+            right: self.right + rhs,
+        }
     }
 }
 
