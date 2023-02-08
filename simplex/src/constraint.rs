@@ -4,8 +4,9 @@ use crate::linear_function::Variable;
 
 // Variable globale
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub enum Operator {
+    #[default]
     Equal,
     Less,
     Greater,
@@ -15,24 +16,30 @@ pub enum Operator {
 
 /// A Constraint is a linear function with an operator
 /// [linear_function] [operator] [0]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Constraint {
     pub left: LinearFunction,
     pub operator: Operator,
     pub right: LinearFunction,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Constraints {
     inner: Vec<Constraint>,
     nb_var_gap: i32,
 }
+impl Constraints {
+    pub fn iter(&self) -> impl Iterator<Item = &Constraint> {
+        self.inner.iter()
+    }
+}
 
 impl Operator {
     /// ```rust
+    /// use simplex::constraint::Operator;
     /// let a = Operator::Less;
     /// let b = Operator::GreaterEqual;
-    /// assert_eq!(a.inverse(), b)
+    /// assert_eq!(a.inverse(), b);
     ///
     /// let c = Operator::Greater;
     /// let d = Operator::LessEqual;
@@ -54,6 +61,7 @@ impl Constraint {
     /// [left::LinearFunction] [op::Operator] [right::LinearFunction]
     /// ```rust
     /// use std::collections::HashMap;
+    /// use simplex::constraint::{Constraint, Operator};
     /// use simplex::linear_function::LinearFunction;
     ///
     /// let lhs = LinearFunction::new(30f32, HashMap::from([(String::from("x"), 32f32), (String::from("z"), -5f32)]));

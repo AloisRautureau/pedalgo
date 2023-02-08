@@ -37,10 +37,7 @@ impl LinearFunction {
     }
 
     pub fn zero() -> LinearFunction {
-        LinearFunction {
-            constant: 0f32,
-            coefficients: HashMap::default(),
-        }
+        LinearFunction::default()
     }
 
     /// Creates a new linear function containing a single variable with coefficient 1
@@ -98,24 +95,25 @@ impl LinearFunction {
             .expect("searched for a positive coefficient on a constant linear function")
     }
 
-	/// Normalizes a linear function with respect to a variable
-	pub fn normalize(&self, var: Variable) -> (LinearFunction, Coefficient) {
-		let mut func = self.clone();
-		let var_coeff = self.coefficients
-							.get(&var)
-							.copied()
-							.expect("Unknown variable in linear function");
-		
-		for (variable, coeff) in self.coefficients.iter() {
-			func[variable.to_string()] = -1f32 * coeff / var_coeff;
-		}
+    /// Normalizes a linear function with respect to a variable
+    pub fn normalize(&self, var: Variable) -> (LinearFunction, Coefficient) {
+        let mut func = self.clone();
+        let var_coeff = self
+            .coefficients
+            .get(&var)
+            .copied()
+            .expect("Unknown variable in linear function");
 
-		func[var] = 1f32;
-		func.constant /= var_coeff;
-		func.constant *= -1f32;
+        for (variable, coeff) in self.coefficients.iter() {
+            func[variable.to_string()] = -1f32 * coeff / var_coeff;
+        }
 
-		(func, var_coeff)
-	}
+        func[var] = 1f32;
+        func.constant /= var_coeff;
+        func.constant *= -1f32;
+
+        (func, var_coeff)
+    }
 }
 
 impl std::ops::Index<Variable> for LinearFunction {

@@ -1,28 +1,20 @@
 //! Implementation of the Simplex algorithm
 //! definition of the simplex object
 
+pub mod app;
 pub mod constraint;
 pub mod linear_function;
-pub mod point;
 
 use constraint::Constraints;
 use linear_function::LinearFunction;
 
 #[derive(Debug, Clone)]
-pub struct LinearEquations {
-    linear_function: LinearFunction,
-    constraints: Constraints,
+pub struct LinearProgram {
+    pub linear_function: LinearFunction,
+    pub constraints: Constraints,
 }
-
-/// Simplex object
-#[derive(Debug)]
-pub struct Simplex {
-    index: usize,
-    historic: Vec<LinearEquations>,
-}
-
-impl LinearEquations {
-    pub fn pivot(&mut self, use_bland_rule: bool) -> LinearEquations {
+impl LinearProgram {
+    pub fn pivot(&mut self, use_bland_rule: bool) -> LinearProgram {
         let current_state = self;
 
         if use_bland_rule {
@@ -39,6 +31,13 @@ impl LinearEquations {
         // mise à jour de la fonction objectif
         todo!();
     }
+}
+
+/// Simplex object
+#[derive(Debug)]
+pub struct Simplex {
+    index: usize,
+    historic: Vec<LinearProgram>,
 }
 
 impl Simplex {
@@ -67,9 +66,14 @@ impl Simplex {
         }
         println!("{}", self.historic[self.index]);
     }
+
+    /// Returns a reference to the current state of the algorithm
+    pub fn current_state(&self) -> &LinearProgram {
+        &self.historic[self.index]
+    }
 }
 
-impl std::fmt::Display for LinearEquations {
+impl std::fmt::Display for LinearProgram {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "{}", self.linear_function)?;
         writeln!(f, "{}", self.constraints)
