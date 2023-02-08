@@ -1,6 +1,13 @@
 //! contraintes linéaire
+use nom::branch::alt;
+use nom::bytes::complete::{is_not, tag};
+use nom::character::complete::{anychar, char};
+use nom::complete::take;
+use nom::multi::many_till;
+use nom::sequence::delimited;
 use crate::linear_function::LinearFunction;
 use crate::linear_function::Variable;
+use crate::{LinearProgram, Simplex};
 
 /// Contraintes object
 
@@ -28,6 +35,17 @@ pub struct Constraints {
     inner: Vec<Constraint>,
 }
 impl Constraints {
+    pub fn maximize(&self, to_maximize: &LinearFunction) -> Simplex {
+        Simplex::from(LinearProgram {
+            linear_function: to_maximize.clone(),
+            constraints: self.clone()
+        })
+    }
+
+    pub fn minimize(&self, to_minimize: &LinearFunction) -> Simplex {
+        todo!()
+    }
+
     pub fn iter(&self) -> impl Iterator<Item = &Constraint> {
         self.inner.iter()
     }
@@ -160,6 +178,49 @@ impl std::fmt::Display for Constraints {
             writeln!(f, "{constraint}")?;
         }
         Ok(())
+    }
+}
+
+/*
+PARSING
+ */
+impl std::str::FromStr for Operator {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.trim() {
+            "=" => Ok(Operator::Equal),
+            "<" => Ok(Operator::Less),
+            ">" => Ok(Operator::Greater),
+            "<=" => Ok(Operator::LessEqual),
+            ">=" => Ok(Operator::GreaterEqual),
+            _ => Err(())
+        }
+    }
+}
+
+impl std::str::FromStr for Constraint {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let parse_op = alt((
+            tag::<&str, &str, ()>("<="),
+            tag::<&str, &str, ()>(">="),
+            tag::<&str, &str, ()>("="),
+            tag::<&str, &str, ()>("<"),
+            tag::<&str, &str, ()>(">"),
+        ));
+        println!("{s}");
+        if let Ok((rhs, (lhs, op))) = many_till(anychar, parse_op)(s) {
+                let lhs = lhs.iter().fold(String::new(), |acc, c| acc + &c.to_string());
+                Ok(Constraint::new(
+                    lhs.parse::<LinearFunction>()?,
+                    op.parse()?,
+                    rhs.parse::<LinearFunction>()?
+                ))
+        } else {
+            Err(())
+        }
     }
 }
 

@@ -40,12 +40,20 @@ pub struct Simplex {
     historic: Vec<LinearProgram>,
 }
 
+impl From<LinearProgram> for Simplex {
+    fn from(value: LinearProgram) -> Self {
+        Simplex {
+            index: 0,
+            historic: vec!(value)
+        }
+    }
+}
 impl Simplex {
-    fn is_first_step(&mut self) -> bool {
+    fn is_first_step(&self) -> bool {
         self.index == 0
     }
 
-    fn is_optimal(&mut self) -> bool {
+    fn is_optimal(&self) -> bool {
         self.historic[self.index]
             .linear_function
             .only_negative_coefficients()
