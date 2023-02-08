@@ -3,8 +3,9 @@ use crate::linear_function::LinearFunction;
 
 /// Contraintes object
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub enum Operator {
+    #[default]
     Equal,
     Less,
     Greater,
@@ -14,16 +15,21 @@ pub enum Operator {
 
 /// A Constraint is a linear function with an operator
 /// [linear_function] [operator] [0]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Constraint {
     pub left: LinearFunction,
     pub operator: Operator,
     pub right: LinearFunction,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Constraints {
     inner: Vec<Constraint>,
+}
+impl Constraints {
+    pub fn iter(&self) -> impl Iterator<Item=&Constraint> {
+        self.inner.iter()
+    }
 }
 
 impl Constraint {

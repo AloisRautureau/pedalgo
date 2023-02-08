@@ -11,7 +11,7 @@ use nom::IResult;
 pub type Variable = String;
 pub type Coefficient = f32;
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Debug, Clone, Default)]
 pub struct LinearFunction {
     pub constant: Coefficient,
     coefficients: HashMap<Variable, Coefficient>,
@@ -26,10 +26,7 @@ impl LinearFunction {
     }
 
     pub fn zero() -> LinearFunction {
-        LinearFunction {
-            constant: 0f32,
-            coefficients: HashMap::default(),
-        }
+        LinearFunction::default()
     }
 
     /// Creates a new linear function containing a single variable with coefficient 1

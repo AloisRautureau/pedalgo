@@ -1,2 +1,0 @@
-//! vecteurs de dimensions n
-
