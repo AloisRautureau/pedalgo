@@ -1,9 +1,9 @@
 //! Implementation of the Simplex algorithm
 //! definition of the simplex object
 
+pub mod app;
 pub mod constraint;
 pub mod linear_function;
-pub mod app;
 
 use constraint::Constraints;
 use linear_function::LinearFunction;

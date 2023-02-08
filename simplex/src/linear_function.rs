@@ -11,7 +11,7 @@ use nom::IResult;
 pub type Variable = String;
 pub type Coefficient = f32;
 
-#[derive(PartialEq, Debug, Clone, Default)]
+#[derive(Default, PartialEq, Debug, Clone)]
 pub struct LinearFunction {
     pub constant: Coefficient,
     coefficients: HashMap<Variable, Coefficient>,
@@ -82,6 +82,26 @@ impl LinearFunction {
             .into_iter()
             .find(|(_, c)| !c.is_sign_negative())
             .expect("searched for a positive coefficient on a constant linear function")
+    }
+
+    /// Normalizes a linear function with respect to a variable
+    pub fn normalize(&self, var: Variable) -> (LinearFunction, Coefficient) {
+        let mut func = self.clone();
+        let var_coeff = self
+            .coefficients
+            .get(&var)
+            .copied()
+            .expect("Unknown variable in linear function");
+
+        for (variable, coeff) in self.coefficients.iter() {
+            func[variable.to_string()] = -1f32 * coeff / var_coeff;
+        }
+
+        func[var] = 1f32;
+        func.constant /= var_coeff;
+        func.constant *= -1f32;
+
+        (func, var_coeff)
     }
 }
 
