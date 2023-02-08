@@ -18,6 +18,17 @@ pub struct LinearFunction {
 }
 impl LinearFunction {
     /// Creates a new linear function with the given constant and coefficients
+    /// ```rust
+    /// use std::collections::HashMap;
+    /// use simplex::linear_function::LinearFunction;
+    /// let linear_func = LinearFunction::new(10f32, HashMap::from([("x".to_string(), 20f32), ("z".to_string(), -2f32)]));
+    /// let expected = LinearFunction {
+    ///    constant: 10f32,
+    ///   coefficients: HashMap::from([("x".to_string(), 20f32), ("z".to_string(), -2f32)])
+    /// };
+    /// ]);
+    /// assert_eq!(linear_func, expected)
+    /// ```
     pub fn new(constant: f32, coefficients: HashMap<Variable, Coefficient>) -> LinearFunction {
         LinearFunction {
             constant,
