@@ -22,9 +22,7 @@ pub struct Simplex {
 }
 
 impl LinearProgram {
-    pub fn pivot(&mut self, use_bland_rule: bool) -> LinearProgram {
-        let current_state = self;
-
+    pub fn pivot(&self, use_bland_rule: bool) -> LinearProgram {
         if use_bland_rule {
 			// applies bland rule
 			let (var, coeff) = self.linear_function
@@ -50,13 +48,6 @@ impl LinearProgram {
         // mise à jour des contraintes
         // mise à jour de la fonction objectif
     }
-}
-
-/// Simplex object
-#[derive(Debug)]
-pub struct Simplex {
-    index: usize,
-    historic: Vec<LinearProgram>,
 }
 
 impl From<LinearProgram> for Simplex {
