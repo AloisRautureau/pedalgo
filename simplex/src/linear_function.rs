@@ -90,12 +90,13 @@ impl LinearFunction {
 	/// Normalizes a linear function with respect to a variable
 	pub fn normalize(&self, var: Variable) -> LinearFunction {
 		let mut func = self.clone();
-		let var_coeff = func.coefficients
+		let var_coeff = self.coefficients
 							.get(&var)
+							.copied()
 							.expect("Unknown variable in linear function");
 		
-		for (&variable, coeff) in self.coefficients.iter() {
-			func[variable] = coeff / var_coeff;
+		for (variable, coeff) in self.coefficients.iter() {
+			func[variable.to_string()] = coeff / var_coeff;
 		}
 
 		func[var] = 1f32;

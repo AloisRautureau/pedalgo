@@ -39,11 +39,11 @@ impl Operator {
     /// ```
     pub fn inverse(&self) -> Operator {
         match self {
-            Equal => Operator::Equal,
-            Less => Operator::GreaterEqual,
-            Greater => Operator::LessEqual,
-            LessEqual => Operator::Greater,
-            GreaterEqual => Operator::Less,
+            Operator::Equal => Operator::Equal,
+            Operator::Less => Operator::GreaterEqual,
+            Operator::Greater => Operator::LessEqual,
+            Operator::LessEqual => Operator::Greater,
+            Operator::GreaterEqual => Operator::Less,
         }
     }
 }
@@ -86,42 +86,11 @@ impl Constraint {
 	// Normalizes a constraint with respect to a variable
 	pub fn normalize(&self, var: Variable) -> Constraint {
 		Constraint {
-			left: self.left.normalize(var),
-			operator: self.operator,
+			left: self.left.normalize(var.clone()),
+			operator: self.operator.clone(),
 			right: self.right.normalize(var),
 		}
 	}
-}
-
-impl Constraints {
-    pub fn add_constraint(&mut self, constraint: Constraint) {
-        match constraint.operator {
-            Operator::Less => {
-                let constraint1 = Constraint {
-                    left: LinearFunction::zero(),
-                    operator: Operator::LessEqual,
-                    right: LinearFunction::zero(),
-                };
-                self.inner.push(constraint1);
-            }
-            Operator::Greater => {
-                let constraint1 = Constraint {
-                    left: LinearFunction::zero(),
-                    operator: Operator::LessEqual,
-                    right: LinearFunction::zero(),
-                };
-                self.inner.push(constraint1);
-            }
-            _ => {
-                let constraint1 = Constraint {
-                    left: LinearFunction::zero(),
-                    operator: Operator::LessEqual,
-                    right: LinearFunction::zero(),
-                };
-                self.inner.push(constraint1);
-            }
-        }
-    }
 }
 
 impl Constraints {
@@ -199,7 +168,7 @@ impl std::ops::Add<LinearFunction> for Constraint {
     /// ```
     fn add(self, rhs: LinearFunction) -> Self::Output {
         Constraint {
-            left: self.left + rhs,
+            left: self.left + rhs.clone(),
             operator: self.operator,
             right: self.right + rhs,
         }
