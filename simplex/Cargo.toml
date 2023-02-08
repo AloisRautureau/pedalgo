@@ -5,5 +5,23 @@ version = "0.1.0"
 authors = ["Aloïs Rautureau", "Paul Adam", "Elie Dumont"]
 edition = "2021"
 
+[lib]
+crate-type = ["cdylib", "rlib"]
+
 [dependencies]
 nom = "7.1.3"
+egui = "0.20.1"
+eframe = { version = "0.20.1", default-features = false, features = [
+    "glow",
+    "default_fonts"
+] }
+
+# native:
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+tracing-subscriber = "0.3"
+
+# web:
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+console_error_panic_hook = "0.1.6"
+tracing-wasm = "0.2"
+wasm-bindgen-futures = "0.4"

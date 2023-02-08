@@ -4,6 +4,7 @@ use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::{alpha1, multispace0};
 
+use nom::multi::many0;
 use nom::number::complete::float;
 use nom::sequence::preceded;
 use nom::IResult;
@@ -26,10 +27,7 @@ impl LinearFunction {
     }
 
     pub fn zero() -> LinearFunction {
-        LinearFunction {
-            constant: 0f32,
-            coefficients: HashMap::default(),
-        }
+        LinearFunction::default()
     }
 
     /// Creates a new linear function containing a single variable with coefficient 1
@@ -95,24 +93,25 @@ impl LinearFunction {
             .expect("searched for a positive coefficient on a constant linear function")
     }
 
-	/// Normalizes a linear function with respect to a variable
-	pub fn normalize(&self, var: Variable) -> (LinearFunction, Coefficient) {
-		let mut func = self.clone();
-		let var_coeff = self.coefficients
-								 .get(&var)
-								 .copied()
-								 .expect("Unknown variable in linear function");
-		
-		for (variable, coeff) in self.coefficients.iter() {
-			func[variable.to_string()] = -1f32 * coeff / var_coeff;
-		}
+    /// Normalizes a linear function with respect to a variable
+    pub fn normalize(&self, var: Variable) -> (LinearFunction, Coefficient) {
+        let mut func = self.clone();
+        let var_coeff = self
+            .coefficients
+            .get(&var)
+            .copied()
+            .expect("Unknown variable in linear function");
 
-		func[var] = -1f32;
-		func.constant /= var_coeff;
-		func.constant *= -1f32;
+        for (variable, coeff) in self.coefficients.iter() {
+            func[variable.to_string()] = -1f32 * coeff / var_coeff;
+        }
 
-		(func, var_coeff)
-	}
+        func[var] = -1f32;
+        func.constant /= var_coeff;
+        func.constant *= -1f32;
+
+        (func, var_coeff)
+    }
 }
 
 impl std::ops::Index<Variable> for LinearFunction {
@@ -306,35 +305,37 @@ impl std::str::FromStr for LinearFunction {
                 (input, true)
             };
 
+            let mut found_coeff = false;
             let (rest, coeff) =
                 if let Ok((rest, coeff)) = preceded(multispace0::<&str, ()>, float)(rest) {
+                    found_coeff = true;
                     (rest, coeff)
                 } else {
                     (rest, 1f32)
                 };
 
-            let (rest, variable) =
-                if let Ok((rest, variable)) = preceded(multispace0::<&str, ()>, alpha1)(rest) {
-                    (rest, variable.to_string())
-                } else {
-                    (rest, String::new())
-                };
+            let (rest, variable) = match preceded(multispace0::<&str, ()>, alpha1)(rest) {
+                Ok((rest, variable)) => (rest, variable.to_string()),
+                Err(_) if found_coeff => (rest, String::new()),
+                _ => {
+                    return Err(nom::Err::Error(nom::error::Error {
+                        input: "aled",
+                        code: nom::error::ErrorKind::Fail,
+                    }))
+                }
+            };
 
             Ok((rest, (variable, if positive { coeff } else { -coeff })))
         }
 
-        let mut s = s;
         let mut linear_func = LinearFunction::zero();
-        while let Ok((rest, (var, coeff))) = parse_variable(s) {
+        let (_, variables) = many0(parse_variable)(s).unwrap();
+        for (var, coeff) in variables {
             if var.is_empty() {
-                linear_func.constant = coeff;
+                linear_func.constant += coeff;
             } else {
-                linear_func[var] = coeff;
+                linear_func[var] += coeff;
             }
-            if rest.is_empty() {
-                break;
-            }
-            s = rest;
         }
         Ok(linear_func)
     }
@@ -363,6 +364,7 @@ impl std::fmt::Display for LinearFunction {
                 .fold(String::new(), |acc, (var, coeff)| {
                     acc + &coeff_to_string(var, coeff) + " "
                 })
+                .trim()
         )
     }
 }
