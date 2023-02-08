@@ -44,9 +44,9 @@ We have completely done this project in Rust. The project is divided in two main
 
 In ```/algui``` you can found the very simple graphical lib to display the points in 2D and 3D.
 
-In ```/src```, you can found the implementation of the simplex algorithm that call the ```algui``` lib to show the simplex, and the current point.
-- ```/src/contraints.rs``` : Implementation of the contraints, the struct use to describe inequalities
-- ```/src/linear.rs``` : Implementation of linear_function the struct use to describe the linear funtction to maximise aswell as the linear function in the contraints.
+- In ```/src```, you can found the implementation of the simplex algorithm that call the ```algui``` lib to show the simplex, and the current point.
+- In ```/src/contraints.rs``` : Implementation of the contraints, the struct use to describe inequalities
+- In ```/src/linear.rs``` : Implementation of linear_function the struct use to describe the linear funtction to maximise aswell as the linear function in the contraints.
 - ```/src/lib.rs``` : Implementation of the simplex structure and 
 
 ---
