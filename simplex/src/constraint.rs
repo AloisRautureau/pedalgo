@@ -104,7 +104,6 @@ impl Constraint {
     // Normalizes a constraint with respect to a variable
     pub fn normalize(&self, var: Variable) -> Constraint {
         let (normalized_rhs, coeff) = self.right.normalize(var);
-
         Constraint {
             left: -(self.left.clone()) / coeff,
             operator: self.operator.clone(),
@@ -117,9 +116,6 @@ impl Constraints {
     /// Create a new vector of constraints
     /// # Example
     /// ```rust
-    /// use simplex::constraint::Constraints;
-    ///
-    /// let constraints = Constraints::new();
     /// ```
     pub fn new() -> Constraints {
         Constraints {
@@ -317,6 +313,24 @@ impl std::str::FromStr for Operator {
 impl std::str::FromStr for Constraint {
     type Err = ();
 
+    /// Parses a constraint from a string
+    /// # Example
+    /// ``` rust
+    /// use simplex::linear_function::LinearFunction;
+    /// use simplex::constraint::Constraint;
+    /// use simplex::constraint::Operator;
+    /// use std::collections::HashMap;
+    /// use std::str::FromStr;
+    ///
+    /// let constraint = match Constraint::from_str("25 -8x + 12 y +3z <= 12") {
+    ///    Ok(constraint) => constraint,
+    ///    Err(_) => panic!("Error")
+    /// };
+    /// let expected_left = LinearFunction::new(25f32, HashMap::from([(String::from("x"), -8f32), (String::from("y"), 12f32), (String::from("z"), 3f32)]));
+    /// let expected_right = LinearFunction::new(12f32, HashMap::new());
+    /// let expected = Constraint::new(expected_left, Operator::LessEqual, expected_right);
+    /// assert_eq!(constraint, expected)
+    /// ```
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let parse_op = alt((
             tag::<&str, &str, ()>("<="),
@@ -384,22 +398,6 @@ impl std::ops::AddAssign<LinearFunction> for Constraint {
     /// assert_eq!(c, expected);
     /// ```
     fn add_assign(&mut self, rhs: LinearFunction) {
-        // A enlever
-        /*
-        use std::collections::HashMap;
-        let left = LinearFunction::new(30f32, HashMap::from([(String::from("x"), 15f32), (String::from("y"), -5f32)]));
-        let right = LinearFunction::new(25f32, HashMap::from([(String::from("x"), -7f32), (String::from("y"), 12f32)]));
-        let mut c = Constraint::new(left, Operator::Equal, right);
-        let var_x = LinearFunction::new(-2f32, HashMap::from([(String::from("x"), 5f32)]));
-
-        let expected_left = LinearFunction::new(28f32, HashMap::from([(String::from("x"), 20f32), (String::from("y"), -5f32)]));
-        let expected_right = LinearFunction::new(23f32, HashMap::from([(String::from("x"), -2f32), (String::from("y"), 12f32)]));
-        let expected = Constraint::new(expected_left, Operator::Equal, expected_right);
-        c += var_x;
-        assert_eq!(c, expected);
-        */
-        // // A enlever
-
         self.left += rhs.clone();
         self.right += rhs;
     }
@@ -450,28 +448,10 @@ impl std::ops::SubAssign<LinearFunction> for Constraint {
     }
 }
 
-/*
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn test_new() {
-        // let left = LinearFunction::new(vec![1.0, 2.0, 3.0]);
-        // let right = LinearFunction::new(vec![1.0, 2.0, 3.0]);
-        // let constraint = Constraint::new(left, Operator::Equal, right);
-        // assert_eq!(constraint.left, LinearFunction::new(vec![0.0, 0.0, 0.0]));
-        todo!();
-    }
+    fn test_new() {}
 }
-
-
-------------------            _____
-max x + 3y;      |           | RUN |
-2x - 5y <= 10;   |            -----
-x + y <= 5;      |
-x <= 0;          |
------------------
-
-ET( linear_function, OP(l_f, operor, l_f),
-*/
