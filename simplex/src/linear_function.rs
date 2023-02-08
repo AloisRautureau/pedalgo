@@ -366,28 +366,30 @@ impl std::str::FromStr for LinearFunction {
 
 impl std::fmt::Display for LinearFunction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        fn coeff_to_string(var: &str, coeff: &Coefficient) -> String {
-            format!(
-                "{}{var}",
-                if coeff == &1f32 {
-                    String::from("+ ")
-                } else if coeff.is_sign_negative() {
-                    format!("- {}", coeff.abs())
+        let mut coeff_iter = self.coefficients.iter();
+        if self.constant != 0.0 {
+            write!(f, "{} ", self.constant)
+        } else if let Some((var, coeff)) = coeff_iter.next() {
+            write!(f, "{coeff}{var} ")
+        } else {
+            return write!(f, "0");
+        }?;
+        for (var, coeff) in coeff_iter {
+            write!(
+                f,
+                "{}{}{var}",
+                if coeff.is_sign_negative() {
+                    "- "
                 } else {
-                    format!("+ {coeff}")
+                    "+ "
+                },
+                if *coeff == 1.0 {
+                    String::new()
+                } else {
+                    coeff.abs().to_string()
                 }
-            )
+            )?
         }
-        write!(
-            f,
-            "{} {}",
-            self.constant,
-            self.coefficients
-                .iter()
-                .fold(String::new(), |acc, (var, coeff)| {
-                    acc + &coeff_to_string(var, coeff) + " "
-                })
-                .trim()
-        )
+        Ok(())
     }
 }

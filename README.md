@@ -11,14 +11,14 @@ Authors :
 ## **Introduction**
 This is a 1-week project to visualize the simplex algorithm done during a computer science project. 
     
-We have choose the language Rust for its efficiency and its security. Also it is pretty simple to then compile our GUI to Webassembly to run it in the browser.
+We have choose the language Rust for its efficiency and its security. Also it is pretty simple to then compile our GUI to Webassembly to run it in a browser.
 
 ## **How to run**
 > ### Webpage
-The webpage is available at https://aloisrautureau.github.io/simplex/. Everithing is explained on the webpage to use the tool. It is Rust compiled to WebAssembly and run in the browser very smoothly.
+The webpage is available at https://aloisrautureau.github.io/simplex/. Everything is explained on the webpage to use the tool. It is Rust compiled to WebAssembly and run in a browser very smoothly.
 
 > ### To run it your self
-If you want to compile youre self this Rust project, you need to install Rust and Cargo. Then you can run the following command to compile the project :
+If you want to compile yourself this Rust project, you need to install Rust and Cargo. Then you can run the following command to compile the project :
 
 ```
 >> cargo run
