@@ -1,10 +1,10 @@
 //! contraintes linéaire
-
+use std::collections::HashMap;
 use crate::linear_function::LinearFunction;
 
 /// Contraintes object
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Operator {
     Equal,
     Less,
@@ -15,21 +15,48 @@ pub enum Operator {
 
 /// A Constraint is a linear function with an operator
 /// [linear_function] [operator] [0]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Constraint {
     pub left: LinearFunction,
     pub operator: Operator,
     pub right: LinearFunction,
 }
 
-pub type Constraints = Vec<Constraint>;
+#[derive(Debug, Clone)]
+pub struct Constraints {
+    inner: Vec<Constraint>,
+}
+
+
 
 impl Constraint {
     pub fn new(left: LinearFunction, operator: Operator, right: LinearFunction) -> Constraint {
-        Constraint {
-            left,
-            operator,
-            right,
+        match operator {
+            Operator::Equal => Constraint {
+                left: left - right ,
+                operator: operator,
+                right: LinearFunction{constant: 0.0, coefficients: HashMap::new()},
+            },
+            Operator::Less => Constraint {
+                left: left,
+                operator: operator,
+                right: right,
+            },
+            Operator::Greater => Constraint {
+                left: left,
+                operator: operator,
+                right: right,
+            },
+            Operator::LessEqual => Constraint {
+                left: -left,
+                operator: operator,
+                right: right,
+            },
+            Operator::GreaterEqual => Constraint {
+                left,
+                operator,
+                right,
+            },
         }
     }
 }
@@ -54,7 +81,7 @@ impl std::fmt::Display for Constraint {
 
 impl std::fmt::Display for Constraints {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for constraint in self {
+        for constraint in self.inner.iter() {
             writeln!(f, "{}", constraint)?;
         }
         Ok(())
@@ -73,10 +100,7 @@ mod tests {
         // assert_eq!(constraint.left, LinearFunction::new(vec![0.0, 0.0, 0.0]));
         todo!();
     }
-
 }
-
-
 
 /*
 ------------------            _____
