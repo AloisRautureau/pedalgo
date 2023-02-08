@@ -1,7 +1,5 @@
 //! contraintes linéaire
 use crate::linear_function::LinearFunction;
-use std::collections::HashMap;
-
 /// Contraintes object
 
 #[derive(Debug, Clone)]
@@ -136,7 +134,7 @@ impl std::fmt::Display for Constraint {
 impl std::fmt::Display for Constraints {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for constraint in self.inner.iter() {
-            writeln!(f, "{}", constraint)?;
+            writeln!(f, "{constraint}")?;
         }
         Ok(())
     }
