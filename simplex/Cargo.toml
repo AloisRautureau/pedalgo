@@ -6,3 +6,4 @@ authors = ["Aloïs Rautureau", "Paul Adam", "Elie Dumont"]
 edition = "2021"
 
 [dependencies]
+nom = "7.1.3"
