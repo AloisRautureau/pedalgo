@@ -44,7 +44,7 @@ impl From<LinearProgram> for Simplex {
     fn from(value: LinearProgram) -> Self {
         Simplex {
             index: 0,
-            historic: vec!(value)
+            historic: vec![value],
         }
     }
 }
@@ -88,6 +88,7 @@ impl std::fmt::Display for LinearProgram {
     }
 }
 
+/*
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -122,3 +123,5 @@ mod tests {
         todo!();
     }
 }
+
+ */

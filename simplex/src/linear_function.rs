@@ -4,10 +4,10 @@ use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::{alpha1, multispace0};
 
+use nom::multi::many0;
 use nom::number::complete::float;
 use nom::sequence::preceded;
 use nom::IResult;
-use nom::multi::many0;
 
 pub type Variable = String;
 pub type Coefficient = f32;
@@ -309,10 +309,12 @@ impl std::str::FromStr for LinearFunction {
             let (rest, variable) = match preceded(multispace0::<&str, ()>, alpha1)(rest) {
                 Ok((rest, variable)) => (rest, variable.to_string()),
                 Err(_) if found_coeff => (rest, String::new()),
-                _ => return Err(nom::Err::Error(nom::error::Error {
-                    input: "aled",
-                    code: nom::error::ErrorKind::Fail
-                }))
+                _ => {
+                    return Err(nom::Err::Error(nom::error::Error {
+                        input: "aled",
+                        code: nom::error::ErrorKind::Fail,
+                    }))
+                }
             };
 
             Ok((rest, (variable, if positive { coeff } else { -coeff })))

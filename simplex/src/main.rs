@@ -7,7 +7,7 @@ fn main() {
     eframe::run_native(
         "simplex",
         eframe::NativeOptions::default(),
-        Box::new(|_cc| Box::new(SimplexVisualizer::default())),
+        Box::new(|_cc| Box::<SimplexVisualizer>::default()),
     );
     // Initialisation of the simplex
     // historique = init_historique()
@@ -31,7 +31,7 @@ fn main() {
         eframe::start_web(
             "simplex",
             eframe::WebOptions::default(),
-            Box::new(|_cc| Box::new(SimplexVisualizer::default())),
+            Box::new(|_cc| Box::<SimplexVisualizer>::default()),
         )
         .await
         .expect("could not start simplex visualizer");

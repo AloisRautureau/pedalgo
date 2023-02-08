@@ -1,8 +1,8 @@
-use crate::constraint::{Constraint, Constraints};
+use crate::constraint::Constraints;
+use crate::linear_function::LinearFunction;
 use crate::Simplex;
 use eframe::Frame;
-use egui::{Color32, Context, FontData, FontDefinitions, FontFamily, Style};
-use crate::linear_function::LinearFunction;
+use egui::{Color32, Context, Style};
 
 #[derive(Default, Debug)]
 pub struct SimplexVisualizer {
@@ -29,22 +29,29 @@ impl eframe::App for SimplexVisualizer {
                                 // Parse constraints
                                 let mut constraints = Constraints::default();
                                 for line in self.constraints_input.lines() {
-                                    constraints.add_constraint(line.parse().expect("invalid constraint input"));
+                                    constraints.add_constraint(
+                                        line.parse().expect("invalid constraint input"),
+                                    );
                                 }
-
 
                                 // Then create the resulting simplex instance
                                 let (command, function) = {
                                     let mut words = self.function_input.split_ascii_whitespace();
                                     let command = words.next();
-                                    let function_str = words.fold(String::new(), |acc, w| acc + w + " ");
-                                    (command, function_str.parse::<LinearFunction>().unwrap_or(LinearFunction::zero()))
+                                    let function_str =
+                                        words.fold(String::new(), |acc, w| acc + w + " ");
+                                    (
+                                        command,
+                                        function_str
+                                            .parse::<LinearFunction>()
+                                            .unwrap_or(LinearFunction::zero()),
+                                    )
                                 };
 
                                 self.simplex = match command {
                                     Some("max") => Some(constraints.maximize(&function)),
                                     Some("min") => Some(constraints.minimize(&function)),
-                                    _ => None
+                                    _ => None,
                                 };
                             }
                         });
@@ -69,7 +76,10 @@ impl eframe::App for SimplexVisualizer {
                                     ui.label(constraint.to_string());
                                 }
                             } else {
-                                ui.colored_label(Color32::LIGHT_GRAY, "Press RUN to start the algorithm");
+                                ui.colored_label(
+                                    Color32::LIGHT_GRAY,
+                                    "Press RUN to start the algorithm",
+                                );
                             }
                         });
                     })
