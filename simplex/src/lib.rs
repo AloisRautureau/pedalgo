@@ -22,10 +22,20 @@ pub struct Simplex {
 }
 
 impl LinearEquations {
-    pub fn pivot(&mut self, use_bland_rule: bool) -> LinearEquations {
-        let current_state = self;
-
+    pub fn pivot(&self, use_bland_rule: bool) -> LinearEquations {
         if use_bland_rule {
+			// applies bland rule
+			let (var, coeff) = self.linear_function
+												.first_positive_coefficient();
+			// 
+			let max_index = self.constraints.constraint_max(var.clone());
+			//
+			let (new_constraints, new_value_var) = self.constraints.pivot_with(var, max_index);
+
+			return LinearEquations {
+				linear_function: self.linear_function.clone() + new_value_var * coeff,
+				constraints: new_constraints
+			};
         } else {
             todo!()
         }
@@ -37,7 +47,6 @@ impl LinearEquations {
         // mise à jour des coefficients
         // mise à jour des contraintes
         // mise à jour de la fonction objectif
-        todo!();
     }
 }
 

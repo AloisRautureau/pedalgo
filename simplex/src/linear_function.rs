@@ -40,6 +40,14 @@ impl LinearFunction {
         }
     }
 
+	/// Creates a new linear function containing a single variable with a predefinite coefficient
+	pub fn single_variable_with_coeff(var: Variable, coeff: f32) -> LinearFunction {
+        LinearFunction {
+            constant: 0f32,
+            coefficients: HashMap::from([(var, coeff)]),
+        }
+    }
+
     /// Applies the linear function to a given valuation, returning the value
     /// ```rust
     /// use std::collections::HashMap;
@@ -91,15 +99,15 @@ impl LinearFunction {
 	pub fn normalize(&self, var: Variable) -> (LinearFunction, Coefficient) {
 		let mut func = self.clone();
 		let var_coeff = self.coefficients
-							.get(&var)
-							.copied()
-							.expect("Unknown variable in linear function");
+								 .get(&var)
+								 .copied()
+								 .expect("Unknown variable in linear function");
 		
 		for (variable, coeff) in self.coefficients.iter() {
 			func[variable.to_string()] = -1f32 * coeff / var_coeff;
 		}
 
-		func[var] = 1f32;
+		func[var] = -1f32;
 		func.constant /= var_coeff;
 		func.constant *= -1f32;
 
