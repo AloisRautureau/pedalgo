@@ -85,10 +85,12 @@ impl Constraint {
 
 	// Normalizes a constraint with respect to a variable
 	pub fn normalize(&self, var: Variable) -> Constraint {
+		let (normalized_rhs, coeff) = self.right.normalize(var.clone());
+
 		Constraint {
-			left: self.left.normalize(var.clone()),
+			left: -(self.left.clone()) / coeff,
 			operator: self.operator.clone(),
-			right: self.right.normalize(var),
+			right: normalized_rhs,
 		}
 	}
 }
@@ -122,6 +124,8 @@ impl Constraints {
             }
         }
     }
+
+	pub fn normalize(&self, var: Variable) {}
 }
 
 impl std::fmt::Display for Operator {
