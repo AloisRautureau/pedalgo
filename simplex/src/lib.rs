@@ -32,10 +32,10 @@ impl LinearProgram {
 			//
 			let (new_constraints, new_value_var) = self.constraints.pivot_with(var, max_index);
 
-			return LinearProgram {
+			LinearProgram {
 				linear_function: self.linear_function.clone() + new_value_var * coeff,
 				constraints: new_constraints
-			};
+			}
         } else {
             todo!()
         }

@@ -154,7 +154,20 @@ impl std::ops::Add<LinearFunction> for LinearFunction {
         }
     }
 }
-impl std::ops::AddAssign<LinearFunction> for LinearFunction {
+
+
+
+impl std::ops::AddAssign<LinearFunction> for LinearFunction {    
+    /// ```rust
+    /// use std::collections::HashMap;
+    /// use simplex::linear_function::LinearFunction;
+    ///
+    /// let mut c = LinearFunction::new(30f32, HashMap::from([(String::from("x"), 32f32), (String::from("z"), -5f32)]));
+    /// let l_f = LinearFunction::new(-5f32, HashMap::from([(String::from("y"), 12f32), (String::from("z"), 5f32)]));
+    /// let expected = LinearFunction::new(25f32, HashMap::from([(String::from("x"), 32f32), (String::from("y"), 12f32), (String::from("z"), 0f32)]));
+    /// c += l_f.clone();
+    /// assert_eq!(c, expected)
+    /// ```
     fn add_assign(&mut self, rhs: LinearFunction) {
         self.constant += rhs.constant;
         for (var, coeff) in rhs.coefficients {
@@ -188,6 +201,16 @@ impl std::ops::Sub<LinearFunction> for LinearFunction {
     }
 }
 impl std::ops::SubAssign<LinearFunction> for LinearFunction {
+    /// ```rust
+    /// use std::collections::HashMap;
+    /// use simplex::linear_function::LinearFunction;
+    ///
+    /// let mut c = LinearFunction::new(30f32, HashMap::from([(String::from("x"), 32f32), (String::from("z"), -5f32)]));
+    /// let l_f = LinearFunction::new(-5f32, HashMap::from([(String::from("y"), 12f32), (String::from("z"), 5f32)]));
+    /// let expected = LinearFunction::new(35f32, HashMap::from([(String::from("x"), 32f32), (String::from("y"), -12f32), (String::from("z"), -10f32)]));
+    /// c -= l_f;
+    /// assert_eq!(c, expected)
+    /// ```
     fn sub_assign(&mut self, rhs: LinearFunction) {
         self.constant -= rhs.constant;
         for (var, coeff) in rhs.coefficients {

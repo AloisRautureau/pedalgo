@@ -11,7 +11,7 @@ use nom::multi::many_till;
 
 // Variable globale
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub enum Operator {
     #[default]
     Equal,
@@ -23,14 +23,14 @@ pub enum Operator {
 
 /// A Constraint is a linear function with an operator
 /// [linear_function] [operator] [0]
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct Constraint {
     pub left: LinearFunction,
     pub operator: Operator,
     pub right: LinearFunction,
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct Constraints {
     inner: Vec<Constraint>,
     nb_var_gap: i32,
@@ -43,7 +43,7 @@ impl Constraints {
         })
     }
 
-    pub fn minimize(&self, to_minimize: &LinearFunction) -> Simplex {
+    pub fn minimize(&self, _to_minimize: &LinearFunction) -> Simplex {
         todo!()
     }
 
@@ -86,24 +86,18 @@ impl Constraint {
     /// let rhs = LinearFunction::new(-5f32, HashMap::from([(String::from("y"), 12f32), (String::from("z"), 5f32)]));
     /// let op = Operator::LessEqual;
     /// let expected = Constraint {
-    ///    left: LinearFunction::zero(),
+    ///    left: LinearFunction::new(30f32, HashMap::from([(String::from("x"), 32f32), (String::from("z"), -5f32)])),
     ///    operator: Operator::LessEqual,
-    ///    right: LinearFunction::new(-35f32, HashMap::from([(String::from("x"), -32f32), (String::from("y"), 12f32), (String::from("z"), 10f32)]))
+    ///    right: LinearFunction::new(-5f32, HashMap::from([(String::from("y"), 12f32), (String::from("z"), 5f32)]))
     /// };
-    /// assert_eq!(new(lhs,op,rhs), expected)
+    /// let n = Constraint::new(lhs, op, rhs);
+    /// assert_eq!(n, expected)
     /// ```
     pub fn new(left: LinearFunction, operator: Operator, right: LinearFunction) -> Constraint {
-        match operator {
-            Operator::Less | Operator::LessEqual | Operator::Equal => Constraint {
-                left: LinearFunction::zero(),
-                operator,
-                right: right - left,
-            },
-            Operator::Greater | Operator::GreaterEqual => Constraint {
-                left: LinearFunction::zero(),
-                operator: operator.inverse(),
-                right: left - right,
-            },
+        Constraint {
+            left,
+            operator,
+            right,
         }
     }
 
@@ -152,7 +146,6 @@ impl Constraints {
     /// };
     /// constraints.add_constraint(constraint);
     /// assert_eq!(constraints.gap_variables_count(), 1);
-    /// assert_eq!(constraints[0].left, LinearFunction::zero());
     /// assert_eq!(constraints[0].operator, Operator::Equal);
     /// assert_eq!(constraints[0].right, LinearFunction::new(-35f32, HashMap::from([(String::from("x"), -32f32), (String::from("y"), 12f32), (String::from("z"), 10f32)])));
     /// ```
@@ -216,55 +209,51 @@ impl Constraints {
     }
 
     /// Normalizes all constraints with respect to a variable
-	pub fn normalize(&self, var: Variable) -> Constraints {
-		let mut normalized_constraints = self.clone();
+    pub fn normalize(&self, var: Variable) -> Constraints {
+        let mut normalized_constraints = self.clone();
 
-		for i in 0..self.inner.len() {
-			normalized_constraints.inner[i] = self.inner[i].normalize(var.clone());
-		}
+        for i in 0..self.inner.len() {
+            normalized_constraints.inner[i] = self.inner[i].normalize(var.clone());
+        }
 
-		normalized_constraints
-	}
+        normalized_constraints
+    }
 
-	/// Returns the index of the constraints that maximizes 'var' while minimising the corresponding constant
-	pub fn constraint_max(&self, var: Variable) -> usize {
-		let normalized_constraints = self.normalize(var.clone());
+    /// Returns the index of the constraints that maximizes 'var' while minimising the corresponding constant
+    pub fn constraint_max(&self, var: Variable) -> usize {
+        let normalized_constraints = self.normalize(var.clone());
 
-		let mut max_index = 0;
-		let mut min_constant = f32::INFINITY;
-		let mut current_index = 0;
+        let mut max_index = 0;
+        let mut min_constant = f32::INFINITY;
+        let mut current_index = 0;
 
-		for constraint in normalized_constraints.inner.iter() {
-			let &index = constraint.right.index(var.clone());
-			if (constraint.right.constant < min_constant) && (index < 0.0){
-				min_constant = constraint.right.constant;
-				max_index = current_index;
-				current_index += 1;
-			}
-		}
+        for constraint in normalized_constraints.inner.iter() {
+            let &index = constraint.right.index(var.clone());
+            if (constraint.right.constant < min_constant) && (index < 0.0) {
+                min_constant = constraint.right.constant;
+                max_index = current_index;
+                current_index += 1;
+            }
+        }
 
-		max_index
-	}
+        max_index
+    }
 
-	/// 
-	pub fn pivot_with(&self, var: Variable, i: usize) -> (Constraints, LinearFunction) {
-		let mut new_constraints = self.clone();
+    ///
+    pub fn pivot_with(&self, var: Variable, i: usize) -> (Constraints, LinearFunction) {
+        let mut new_constraints = self.clone();
 
-		let &right_coeff = new_constraints.inner[i]
-										.right
-										.index(var.clone());
-		let (evar, left_coeff) = new_constraints.inner[i]
-										.left
-										.first_positive_coefficient();
+        let &right_coeff = new_constraints.inner[i].right.index(var.clone());
+        let (evar, left_coeff) = new_constraints.inner[i].left.first_positive_coefficient();
 
-		let right_compensation = LinearFunction::single_variable_with_coeff(var, right_coeff);
-		let left_compensation = LinearFunction::single_variable_with_coeff(evar, left_coeff);
-		new_constraints.inner[i] -= right_compensation;
-		new_constraints.inner[i] -= left_compensation;
+        let right_compensation = LinearFunction::single_variable_with_coeff(var, right_coeff);
+        let left_compensation = LinearFunction::single_variable_with_coeff(evar, left_coeff);
+        new_constraints.inner[i] -= right_compensation;
+        new_constraints.inner[i] -= left_compensation;
 
-		let rhs = new_constraints.inner[i].right.clone();
-		(new_constraints, rhs)
-	}
+        let rhs = new_constraints.inner[i].right.clone();
+        (new_constraints, rhs)
+    }
 }
 
 impl std::ops::Index<usize> for Constraints {
@@ -365,7 +354,7 @@ impl std::ops::Add<LinearFunction> for Constraint {
     /// let c = LinearFunction::new(30f32, HashMap::from([(String::from("x"), 32f32), (String::from("z"), -5f32)]));
     /// let l_f = LinearFunction::new(-5f32, HashMap::from([(String::from("y"), 12f32), (String::from("z"), 5f32)]));
     /// let expected = LinearFunction::new(25f32, HashMap::from([(String::from("x"), 32f32), (String::from("y"), 12f32), (String::from("z"), 0f32)]));
-    /// assert_eq!(c + l_f, expected)
+    /// assert_eq!(c + l_f, expected);
     /// ```
     fn add(self, rhs: LinearFunction) -> Self::Output {
         Constraint {
@@ -380,17 +369,40 @@ impl std::ops::AddAssign<LinearFunction> for Constraint {
     /// ```rust
     /// use std::collections::HashMap;
     /// use simplex::linear_function::LinearFunction;
+    /// use simplex::constraint::Constraint;
+    /// use simplex::constraint::Operator;
     ///
-    /// let c = LinearFunction::new(30f32, HashMap::from([(String::from("x"), 32f32), (String::from("z"), -5f32)]));
-    /// let l_f = LinearFunction::new(-5f32, HashMap::from([(String::from("y"), 12f32), (String::from("z"), 5f32)]));
-    /// let expected = LinearFunction::new(25f32, HashMap::from([(String::from("x"), 32f32), (String::from("y"), 12f32), (String::from("z"), 0f32)]));
-	/// c += l_f;
-    /// assert_eq!(c, expected)
+    /// let left = LinearFunction::new(30f32, HashMap::from([(String::from("x"), 15f32), (String::from("y"), -5f32)]));
+    /// let right = LinearFunction::new(25f32, HashMap::from([(String::from("x"), -7f32), (String::from("y"), 12f32)]));
+    /// let mut c = Constraint::new(left, Operator::Equal, right);
+    /// let var_x = LinearFunction::new(-2f32, HashMap::from([(String::from("x"), 5f32)]));
+    ///
+    /// let expected_left = LinearFunction::new(28f32, HashMap::from([(String::from("x"), 20f32), (String::from("y"), -5f32)]));
+    /// let expected_right = LinearFunction::new(23f32, HashMap::from([(String::from("x"), -2f32), (String::from("y"), 12f32)]));
+    /// let expected = Constraint::new(expected_left, Operator::Equal, expected_right);
+    /// c += var_x;
+    /// assert_eq!(c, expected);
     /// ```
     fn add_assign(&mut self, rhs: LinearFunction) {
-		self.left += rhs.clone();
-		self.right += rhs;
-	}
+        // A enlever
+        /*
+        use std::collections::HashMap;
+        let left = LinearFunction::new(30f32, HashMap::from([(String::from("x"), 15f32), (String::from("y"), -5f32)]));
+        let right = LinearFunction::new(25f32, HashMap::from([(String::from("x"), -7f32), (String::from("y"), 12f32)]));
+        let mut c = Constraint::new(left, Operator::Equal, right);
+        let var_x = LinearFunction::new(-2f32, HashMap::from([(String::from("x"), 5f32)]));
+
+        let expected_left = LinearFunction::new(28f32, HashMap::from([(String::from("x"), 20f32), (String::from("y"), -5f32)]));
+        let expected_right = LinearFunction::new(23f32, HashMap::from([(String::from("x"), -2f32), (String::from("y"), 12f32)]));
+        let expected = Constraint::new(expected_left, Operator::Equal, expected_right);
+        c += var_x;
+        assert_eq!(c, expected);
+        */
+        // // A enlever
+
+        self.left += rhs.clone();
+        self.right += rhs;
+    }
 }
 
 impl std::ops::Sub<LinearFunction> for Constraint {
@@ -402,7 +414,7 @@ impl std::ops::Sub<LinearFunction> for Constraint {
     ///
     /// let c = LinearFunction::new(30f32, HashMap::from([(String::from("x"), 32f32), (String::from("z"), -5f32)]));
     /// let l_f = LinearFunction::new(-5f32, HashMap::from([(String::from("y"), 12f32), (String::from("z"), 5f32)]));
-    /// let expected = LinearFunction::new(35f32, HashMap::from([(String::from("x"), 32f32), (String::from("y"), 12f32), (String::from("z"), -10f32)]));
+    /// let expected = LinearFunction::new(35f32, HashMap::from([(String::from("x"), 32f32), (String::from("y"), -12f32), (String::from("z"), -10f32)]));
     /// assert_eq!(c-l_f, expected)
     /// ```
     fn sub(self, rhs: LinearFunction) -> Self::Output {
@@ -418,17 +430,24 @@ impl std::ops::SubAssign<LinearFunction> for Constraint {
     /// ```rust
     /// use std::collections::HashMap;
     /// use simplex::linear_function::LinearFunction;
+    /// use simplex::constraint::Constraint;
+    /// use simplex::constraint::Operator;
     ///
-    /// let c = LinearFunction::new(30f32, HashMap::from([(String::from("x"), 32f32), (String::from("z"), -5f32)]));
-    /// let l_f = LinearFunction::new(-5f32, HashMap::from([(String::from("y"), 12f32), (String::from("z"), 5f32)]));
-    /// let expected = LinearFunction::new(35f32, HashMap::from([(String::from("x"), 32f32), (String::from("y"), 12f32), (String::from("z"), -10f32)]));
-	/// c -= l_f;
-    /// assert_eq!(c, expected)
+    /// let left = LinearFunction::new(30f32, HashMap::from([(String::from("x"), 15f32), (String::from("y"), -5f32)]));
+    /// let right = LinearFunction::new(25f32, HashMap::from([(String::from("x"), -7f32), (String::from("y"), 12f32)]));
+    /// let mut c = Constraint::new(left, Operator::Equal, right);
+    /// let var_x = LinearFunction::new(-2f32, HashMap::from([(String::from("x"), 5f32)]));
+    ///
+    /// let expected_left = LinearFunction::new(32f32, HashMap::from([(String::from("x"), 10f32), (String::from("y"), -5f32)]));
+    /// let expected_right = LinearFunction::new(27f32, HashMap::from([(String::from("x"), -12f32), (String::from("y"), 12f32)]));
+    /// let expected = Constraint::new(expected_left, Operator::Equal, expected_right);
+    /// c -= var_x;
+    /// assert_eq!(c, expected);
     /// ```
     fn sub_assign(&mut self, rhs: LinearFunction) {
-		self.left -= rhs.clone();
-		self.right -= rhs;
-	}
+        self.left -= rhs.clone();
+        self.right -= rhs;
+    }
 }
 
 /*
