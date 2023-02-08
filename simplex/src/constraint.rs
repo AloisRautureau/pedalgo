@@ -2,7 +2,7 @@
 use crate::linear_function::LinearFunction;
 use crate::linear_function::Variable;
 
-/// Contraintes object
+// Variable globale
 
 #[derive(Debug, Clone)]
 pub enum Operator {
@@ -25,6 +25,7 @@ pub struct Constraint {
 #[derive(Debug, Clone)]
 pub struct Constraints {
     inner: Vec<Constraint>,
+    nb_var_gap: i32,
 }
 
 impl Operator {
@@ -49,11 +50,8 @@ impl Operator {
 }
 
 impl Constraint {
-    /// Create a new constraint with a left linear function, an operator and a right linear function
-    /// always with the form
-    ///     - [Zero] < [LinearFunction]
-    ///     - [Zero] <= [LinearFunction]
-    ///     - [Zero] =  [LinearFunction]
+    /// Create a new constraint from two linear functions and an operator
+    /// [left::LinearFunction] [op::Operator] [right::LinearFunction]
     /// ```rust
     /// use std::collections::HashMap;
     /// use simplex::linear_function::LinearFunction;
@@ -72,7 +70,7 @@ impl Constraint {
         match operator {
             Operator::Less | Operator::LessEqual | Operator::Equal => Constraint {
                 left: LinearFunction::zero(),
-                operator: operator,
+                operator,
                 right: right - left,
             },
             Operator::Greater | Operator::GreaterEqual => Constraint {
@@ -83,49 +81,107 @@ impl Constraint {
         }
     }
 
-	// Normalizes a constraint with respect to a variable
-	pub fn normalize(&self, var: Variable) -> Constraint {
-		let (normalized_rhs, coeff) = self.right.normalize(var.clone());
+    // Normalizes a constraint with respect to a variable
+    pub fn normalize(&self, var: Variable) -> Constraint {
+        let (normalized_rhs, coeff) = self.right.normalize(var);
 
-		Constraint {
-			left: -(self.left.clone()) / coeff,
-			operator: self.operator.clone(),
-			right: normalized_rhs,
-		}
-	}
+        Constraint {
+            left: -(self.left.clone()) / coeff,
+            operator: self.operator.clone(),
+            right: normalized_rhs,
+        }
+    }
 }
 
 impl Constraints {
+
+    /// Create a new vector of constraints
+    /// # Example
+    /// ```rust
+    /// let constraints = Constraints::new();
+    /// ```
+    pub fn new() -> Constraints {
+        Constraints {
+            inner: Vec::new(),
+            nb_var_gap: 0,
+        }
+    }
+
+    /// Add a constraint to the list of constraints
+    /// The constraint added is in this form : 
+    ///
+    /// [Gap_Variable] [=] [Constant] + [LinearFunction_of_non_gap_variables]
+    /// # Example
+    /// ```rust
+    /// let mut constraints = Constraints::new();
+    /// let constraint = Constraint {
+    ///   left: LinearFunction::new(30f32, HashMap::from([(String::from("x"), 32f32), (String::from("z"), -5f32)])),
+    ///   operator: Operator::LessEqual,
+    ///   right: LinearFunction::new(-5f32, HashMap::from([(String::from("y"), 12f32), (String::from("z"), 5f32)]))
+    /// };
+    /// constraints.add_constraint(constraint);
+    /// assert_eq!(constraints.inner.len(), 1);
+    /// assert_eq!(constraints.nb_var_gap, 1);
+    /// assert_eq!(constraints.inner[0].left, LinearFunction::zero());
+    /// assert_eq!(constraints.inner[0].operator, Operator::Equal);
+    /// assert_eq!(constraints.inner[0].right, LinearFunction::new(-35f32, HashMap::from([(String::from("x"), -32f32), (String::from("y"), 12f32), (String::from("z"), 10f32)])));
+    /// ```
     pub fn add_constraint(&mut self, constraint: Constraint) {
-        match constraint.operator {
-            Operator::Less => {
-                let constraint1 = Constraint {
-                    left: LinearFunction::zero(),
-                    operator: Operator::LessEqual,
-                    right: LinearFunction::zero(),
+        let Constraint {
+            left,
+            operator,
+            right,
+        } = constraint;
+        match operator {
+            Operator::LessEqual | Operator::Less => {
+                let x: LinearFunction =
+                    LinearFunction::single_variable("E".to_owned() + &self.nb_var_gap.to_string());
+                self.nb_var_gap += 1;
+
+                let constraint = Constraint {
+                    left: x,
+                    operator: Operator::Equal,
+                    right: right - left,
                 };
-                self.inner.push(constraint1);
+                self.inner.push(constraint);
             }
-            Operator::Greater => {
-                let constraint1 = Constraint {
-                    left: LinearFunction::zero(),
-                    operator: Operator::LessEqual,
-                    right: LinearFunction::zero(),
+            Operator::GreaterEqual | Operator::Greater => {
+                let x: LinearFunction =
+                    LinearFunction::single_variable("E".to_owned() + &self.nb_var_gap.to_string());
+                self.nb_var_gap += 1;
+
+                let constraint = Constraint {
+                    left: x,
+                    operator: Operator::Equal,
+                    right: left - right,
                 };
-                self.inner.push(constraint1);
+                self.inner.push(constraint);
             }
-            _ => {
+            Operator::Equal => {
+                let x1: LinearFunction =
+                    LinearFunction::single_variable("E".to_owned() + &self.nb_var_gap.to_string());
+                self.nb_var_gap += 1;
+                let x2: LinearFunction =
+                    LinearFunction::single_variable("E".to_owned() + &self.nb_var_gap.to_string());
+                self.nb_var_gap += 1;
+
                 let constraint1 = Constraint {
-                    left: LinearFunction::zero(),
-                    operator: Operator::LessEqual,
-                    right: LinearFunction::zero(),
+                    left: x1,
+                    operator: Operator::Equal,
+                    right: right.clone() - left.clone(),
+                };
+                let constraint2 = Constraint {
+                    left: x2,
+                    operator: Operator::Equal,
+                    right: right - left,
                 };
                 self.inner.push(constraint1);
+                self.inner.push(constraint2);
             }
         }
     }
 
-	pub fn normalize(&self, var: Variable) {}
+    pub fn normalize(&self, var: Variable) {}
 }
 
 impl std::fmt::Display for Operator {
