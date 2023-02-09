@@ -364,12 +364,15 @@ impl std::str::FromStr for LinearFunction {
 
 impl std::fmt::Display for LinearFunction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut coeff_iter = self.coefficients.iter();
+        // TO CLEAN
+        let mut h_map: Vec<_> = self.coefficients.clone().into_iter().collect();
+        h_map.sort_by_key(|(var, _)| var.clone());
+        let mut coeff_iter = h_map.iter();
+
         if let Some((var, coeff)) = coeff_iter.next() {
             match *coeff {
-                x if x == 0.0 => write!(f, ""),
-                x if x == 1.0 => write!(f, "{}", var),
-                x if x == -1.0 => write!(f, "-{}", var),
+                x if x == 1.0 => write!(f, "{var}"),
+                x if x == -1.0 => write!(f, "-{var}"),
                 _ => write!(f, "{coeff}{var}"),
             }
         } else {
@@ -377,9 +380,8 @@ impl std::fmt::Display for LinearFunction {
         }?;
         for (var, coeff) in coeff_iter {
             match *coeff {
-                x if x == 0.0 => write!(f, ""),
-                x if x == 1.0 => write!(f, "{}", var),
-                x if x == -1.0 => write!(f, " - {}", var),
+                x if x == 1.0 => write!(f, " + {var}"),
+                x if x == -1.0 => write!(f, " - {var}"),
                 _ => write!(
                     f,
                     "{}{}{var}",
