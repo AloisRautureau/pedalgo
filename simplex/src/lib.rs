@@ -4,6 +4,7 @@
 pub mod app;
 pub mod constraint;
 pub mod linear_function;
+mod polyhedron;
 
 use constraint::Constraints;
 use linear_function::LinearFunction;
@@ -35,7 +36,8 @@ impl LinearProgram {
                 self.constraints.pivot_with(var.clone(), max_index);
 
             LinearProgram {
-                linear_function: self.linear_function.clone() + new_value_var * coeff - LinearFunction::single_variable_with_coeff(var, coeff),
+                linear_function: self.linear_function.clone() + new_value_var * coeff
+                    - LinearFunction::single_variable_with_coeff(var, coeff),
                 constraints: new_constraints,
             }
         } else {
@@ -72,16 +74,17 @@ impl Simplex {
     }
 
     pub fn next_step(&mut self, use_bland_rule: bool) {
-        if self.is_optimal() {
-            return;
-        }
-
-        if self.index == self.historic.len() - 1 {
-            let new_state = self.current_state().pivot(use_bland_rule);
-            self.historic.push(new_state);
-        }
-
-        self.index += 1;
+        match (self.is_optimal(), self.index == self.historic.len() - 1) {
+            (false, true) => {
+                let new_state = self.current_state().pivot(use_bland_rule);
+                self.historic.push(new_state);
+                self.index += 1;
+            }
+            (false, false) => {
+                self.index += 1;
+            }
+            (_, _) => ()
+        };
     }
 
     pub fn previous_step(&mut self) {
