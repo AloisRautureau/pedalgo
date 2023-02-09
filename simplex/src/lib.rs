@@ -69,19 +69,25 @@ impl Simplex {
     }
 
     pub fn next_step(&mut self, use_bland_rule: bool) {
-        if !self.is_optimal() && (self.index == self.historic.len() - 1) {
-            self.index += 1;
-            let new_state = self.historic[self.index].pivot(use_bland_rule);
-            self.historic.push(new_state);
-        }
-        println!("{}", self.historic[self.index]);
+        match (self.is_optimal(), self.index == self.historic.len() - 1) {
+            (false, true) => {
+                let new_state = self.current_state().pivot(use_bland_rule);
+                self.historic.push(new_state);
+                self.index += 1;
+            }
+            (false, false) => {
+                self.index += 1;
+            }
+            (_, _) => {
+                return;
+            }
+        };
     }
 
     pub fn last_step(&mut self) {
         if !self.is_first_step() {
             self.index -= 1;
         }
-        println!("{}", self.historic[self.index]);
     }
 
     /// Returns a reference to the current state of the algorithm
