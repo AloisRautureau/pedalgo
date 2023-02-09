@@ -119,10 +119,6 @@ impl Constraints {
         })
     }
 
-    pub fn minimize(&self, _to_minimize: &LinearFunction) -> Simplex {
-        todo!()
-    }
-
     pub fn iter(&self) -> impl Iterator<Item = &Constraint> {
         self.inner.iter()
     }
@@ -213,6 +209,7 @@ impl Constraints {
         self.inner.len()
     }
 
+
     /// Normalizes all constraints with respect to a variable
     pub fn normalize(&self, var: Variable) -> Constraints {
         let mut normalized_constraints = self.clone();
@@ -220,7 +217,6 @@ impl Constraints {
         for i in 0..self.inner.len() {
             normalized_constraints.inner[i] = self.inner[i].normalize(var.clone());
         }
-
         normalized_constraints
     }
 
@@ -476,6 +472,19 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_new() {}
+    fn test_normalize() {
+    use std::str::FromStr;
+    use std::collections::HashMap;
+
+    let mut constraints = Constraints::new(); 
+    let linear_function = LinearFunction::from_str("x + 2y + 3z").unwrap();
+    let constraint1 = Constraint::from_str("x + 2y + 3z <= 4").unwrap();
+    let constraint2 = Constraint::from_str("x + 2y + 3z <= 4").unwrap();
+    let constraint3 = Constraint::from_str("x + 2y + 3z <= 4").unwrap();
+    let constraints = Constraints::new();
+    constraints.add_constraint(constraint1);
+    constraints.add_constraint(constraint2);
+    constraints.add_constraint(constraint3);
+    }
 }
 */

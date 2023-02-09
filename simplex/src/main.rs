@@ -1,7 +1,7 @@
 use simplex::app::SimplexVisualizer;
 
 #[cfg(not(target_arch = "wasm32"))]
-fn main() {
+fn main() -> eframe::Result<()> {
     tracing_subscriber::fmt::init();
 
     let mut native_options = eframe::NativeOptions::default();
@@ -12,22 +12,11 @@ fn main() {
         "simplex",
         native_options,
         Box::new(|_cc| Box::<SimplexVisualizer>::default()),
-    );
-    // Initialisation of the simplex
-    // historique = init_historique()
-    // s = init (lecture dans le terminal)
-    // simplex(s)
-    // modifier s et afficher les résultats
-
-    // if TOUCH : NEXT_STEP
-    //     function : next_step
-
-    // if TOUCH : LAST_STEP
-    //     function : last_step
+    )
 }
 
 #[cfg(target_arch = "wasm32")]
-fn main() {
+fn main() -> eframe::Result<()>{
     console_error_panic_hook::set_once();
     tracing_wasm::set_as_global_default();
 

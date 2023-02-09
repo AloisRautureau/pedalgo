@@ -79,11 +79,11 @@ impl Simplex {
             (false, false) => {
                 self.index += 1;
             }
-            (_, _) => {}
+            (_, _) => ()
         };
     }
 
-    pub fn last_step(&mut self) {
+    pub fn previous_step(&mut self) {
         if !self.is_first_step() {
             self.index -= 1;
         }
