@@ -261,7 +261,7 @@ impl Constraints {
         println!("Current constraint (i = {}): {}", i, current_constraint);
 
         let right_coeff = current_constraint.right[var.clone()];
-        let right_compensation = LinearFunction::single_variable_with_coeff(var, right_coeff);
+        let right_compensation = LinearFunction::single_variable_with_coeff(var.clone(), right_coeff);
 
         println!("Right compensation : {}", right_compensation);
 
@@ -275,8 +275,22 @@ impl Constraints {
         let rhs = current_constraint.right.clone();
         new_constraints.inner[i] = current_constraint;
 
+		let new_constraints = new_constraints.replace_variable_with(var, rhs.clone());
+
         (new_constraints, rhs)
     }
+
+	fn replace_variable_with(&self, var: Variable, value: LinearFunction) -> Constraints {
+		let mut new_constraints = self.clone();
+
+		for j in 0..new_constraints.inner.len() {
+			let coeff = new_constraints.inner[j].right[var.clone()];
+			new_constraints.inner[j].right[var.clone()] = 0.0;
+			new_constraints.inner[j].right += value.clone() * coeff;
+		}
+
+		new_constraints
+	}
 }
 
 impl std::ops::Index<usize> for Constraints {
