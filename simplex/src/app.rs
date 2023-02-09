@@ -74,16 +74,14 @@ impl eframe::App for SimplexVisualizer {
 
                             if ui.add(egui::Button::new("RUN")).clicked() {
                                 // Parse constraints
-                                let constraints: Constraints =
-                                    self.constraints_input.parse().unwrap();
-
+                                let constraints = Constraints::compile(&self.constraints_input).unwrap();
                                 // Parse linear function
                                 let function = self
-                                    .function_input
-                                    .parse()
-                                    .unwrap_or(LinearFunction::zero());
+                                .function_input
+                                .parse()
+                                .unwrap_or(LinearFunction::zero());
 
-                                // Create simplex
+                                // Run simplex
                                 self.simplex = Some(constraints.maximize(&if self.maximize {
                                     function
                                 } else {
