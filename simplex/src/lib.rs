@@ -26,9 +26,10 @@ impl LinearProgram {
         if use_bland_rule {
             // applies bland rule
             let (var, coeff) = self.linear_function.first_positive_coefficient();
-            //
+            println!("Chosen var : {var} with coeff : {coeff}");
+            // get the strongest constraint
             let max_index = self.constraints.constraint_max(var.clone());
-            //
+            // do a pivot step on this particular constraint
             let (new_constraints, new_value_var) = self.constraints.pivot_with(var.clone(), max_index);
 
             LinearProgram {
