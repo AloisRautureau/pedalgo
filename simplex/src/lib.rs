@@ -29,10 +29,10 @@ impl LinearProgram {
             //
             let max_index = self.constraints.constraint_max(var.clone());
             //
-            let (new_constraints, new_value_var) = self.constraints.pivot_with(var, max_index);
+            let (new_constraints, new_value_var) = self.constraints.pivot_with(var.clone(), max_index);
 
             LinearProgram {
-                linear_function: self.linear_function.clone() + new_value_var * coeff,
+                linear_function: self.linear_function.clone() + new_value_var * coeff - LinearFunction::single_variable_with_coeff(var, coeff),
                 constraints: new_constraints,
             }
         } else {

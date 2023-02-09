@@ -96,11 +96,12 @@ impl LinearFunction {
     /// Normalizes a linear function with respect to a variable
     pub fn normalize(&self, var: Variable) -> (LinearFunction, Coefficient) {
         let mut func = self.clone();
-        let var_coeff = self
-            .coefficients
-            .get(&var)
-            .copied()
-            .expect("Unknown variable in linear function");
+        let var_coeff = if let Some(var_coeff) = self.coefficients.get(&var).copied() {
+            var_coeff
+        } else {
+            return (func, 0.0);
+        };
+        //.expect("Unknown variable in linear function");
 
         for (variable, coeff) in self.coefficients.iter() {
             func[variable.to_string()] = -1f32 * coeff / var_coeff;
@@ -364,19 +365,24 @@ impl std::str::FromStr for LinearFunction {
 
 impl std::fmt::Display for LinearFunction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        // TO CLEAN
+        // sort the hashmap by variable name
+        // filtre for the non-zero coefficients
+        // then iterate over the coefficients
         let mut h_map: Vec<_> = self.coefficients.clone().into_iter().collect();
         h_map.sort_by_key(|(var, _)| var.clone());
+        h_map.retain(|(_, coeff)| *coeff != 0.0);
         let mut coeff_iter = h_map.iter();
 
-        if let Some((var, coeff)) = coeff_iter.next() {
+        if self.constant != 0.0 {
+            write!(f, "{}", self.constant)
+        } else if let Some((var, coeff)) = coeff_iter.next() {
             match *coeff {
                 x if x == 1.0 => write!(f, "{var}"),
                 x if x == -1.0 => write!(f, "-{var}"),
                 _ => write!(f, "{coeff}{var}"),
             }
         } else {
-            write!(f, "{}", self.constant)
+            write!(f, "0")
         }?;
         for (var, coeff) in coeff_iter {
             match *coeff {
