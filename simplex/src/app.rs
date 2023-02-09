@@ -24,7 +24,8 @@ impl Default for SimplexVisualizer {
         SimplexVisualizer {
             maximize: true,
             function_input: String::from("x + 6y + 13z"),
-            constraints_input: String::from("\
+            constraints_input: String::from(
+                "\
 x <= 200\n\
 y <= 300\n\
 x + y + z <= 400\n\
@@ -59,7 +60,10 @@ impl eframe::App for SimplexVisualizer {
                             ui.heading("Linear Program");
                             ui.horizontal(|ui| {
                                 egui::ComboBox::from_label("")
-                                    .selected_text(format!("{}", if self.maximize { "MAX" } else { "MIN" }))
+                                    .selected_text(format!(
+                                        "{}",
+                                        if self.maximize { "MAX" } else { "MIN" }
+                                    ))
                                     .show_ui(ui, |ui| {
                                         ui.selectable_value(&mut self.maximize, true, "MAX");
                                         ui.selectable_value(&mut self.maximize, false, "MIN");
@@ -70,29 +74,21 @@ impl eframe::App for SimplexVisualizer {
 
                             if ui.add(egui::Button::new("RUN")).clicked() {
                                 // Parse constraints
-                                let mut constraints = Constraints::default();
-                                for line in self
-                                    .constraints_input
-                                    .lines()
-                                    .filter(|l| !l.trim().is_empty())
-                                {
-                                    constraints.add_constraint(
-                                        line.parse().expect("invalid constraint input"),
-                                    );
-                                }
+                                let constraints: Constraints =
+                                    self.constraints_input.parse().unwrap();
 
-                                // Then create the resulting simplex instance
-                                let function = self.function_input.parse::<LinearFunction>().unwrap_or(LinearFunction::zero());
+                                // Parse linear function
+                                let function = self
+                                    .function_input
+                                    .parse()
+                                    .unwrap_or(LinearFunction::zero());
 
-                                self.simplex = Some(
-                                    constraints.maximize(
-                                        &if self.maximize {
-                                            function
-                                        } else {
-                                            -function
-                                        }
-                                    )
-                                );
+                                // Create simplex
+                                self.simplex = Some(constraints.maximize(&if self.maximize {
+                                    function
+                                } else {
+                                    -function
+                                }));
                             }
                         });
                     })
