@@ -332,7 +332,7 @@ impl std::str::FromStr for LinearFunction {
                     found_coeff = true;
                     (rest, coeff)
                 } else {
-                    (rest, 1f32)
+                    (rest, 1.0)
                 };
 
             let (rest, variable) = match preceded(multispace0::<&str, ()>, alpha1)(rest) {
