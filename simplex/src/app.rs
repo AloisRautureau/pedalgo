@@ -99,6 +99,12 @@ impl eframe::App for SimplexVisualizer {
                                 );
                             }
                         });
+                        // Next_step button
+                        if ui.add(egui::Button::new("Next Step")).clicked() {
+                            if let Some(simplex) = &mut self.simplex {
+                                simplex.next_step(true);
+                            }
+                        }
                     })
             });
 
