@@ -78,9 +78,7 @@ impl Simplex {
             (false, false) => {
                 self.index += 1;
             }
-            (_, _) => {
-                return;
-            }
+            (_, _) => {}
         };
     }
 
