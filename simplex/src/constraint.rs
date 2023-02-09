@@ -35,21 +35,6 @@ pub struct Constraints {
     inner: Vec<Constraint>,
     nb_var_gap: i32,
 }
-<<<<<<< HEAD
-impl Constraints {
-    pub fn maximize(&self, to_maximize: &LinearFunction) -> Simplex {
-        Simplex::from(LinearProgram {
-            linear_function: to_maximize.clone(),
-            constraints: self.clone(),
-        })
-    }
-
-    pub fn iter(&self) -> impl Iterator<Item = &Constraint> {
-        self.inner.iter()
-    }
-}
-=======
->>>>>>> c9052f7c6d9ddcf4de43785ef1ec15f06cad3672
 
 impl Operator {
     /// ```rust
@@ -132,10 +117,6 @@ impl Constraints {
             linear_function: to_maximize.clone(),
             constraints: self.clone(),
         })
-    }
-
-    pub fn minimize(&self, _to_minimize: &LinearFunction) -> Simplex {
-        todo!()
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &Constraint> {

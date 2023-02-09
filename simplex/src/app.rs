@@ -22,15 +22,9 @@ pub struct SimplexVisualizer {
 impl Default for SimplexVisualizer {
     fn default() -> Self {
         SimplexVisualizer {
-<<<<<<< HEAD
             maximize: true,
             function_input: String::from("x + 6y + 13z"),
             constraints_input: String::from("\
-=======
-            function_input: String::from("max x + 6y + 13z"),
-            constraints_input: String::from(
-                "\
->>>>>>> c9052f7c6d9ddcf4de43785ef1ec15f06cad3672
 x <= 200\n\
 y <= 300\n\
 x + y + z <= 400\n\
