@@ -13,6 +13,7 @@ use egui::{Color32, Context, Style};
 
 #[derive(Debug)]
 pub struct SimplexVisualizer {
+    maximize: bool,
     function_input: String,
     constraints_input: String,
 
@@ -21,9 +22,9 @@ pub struct SimplexVisualizer {
 impl Default for SimplexVisualizer {
     fn default() -> Self {
         SimplexVisualizer {
-            function_input: String::from("max x + 6y + 13z"),
-            constraints_input: String::from(
-                "\
+            maximize: true,
+            function_input: String::from("x + 6y + 13z"),
+            constraints_input: String::from("\
 x <= 200\n\
 y <= 300\n\
 x + y + z <= 400\n\
@@ -56,7 +57,15 @@ impl eframe::App for SimplexVisualizer {
                     .show(ui, |ui| {
                         ui.vertical(|ui| {
                             ui.heading("Linear Program");
-                            ui.text_edit_singleline(&mut self.function_input);
+                            ui.horizontal(|ui| {
+                                egui::ComboBox::from_label("")
+                                    .selected_text(format!("{}", if self.maximize { "MAX" } else { "MIN" }))
+                                    .show_ui(ui, |ui| {
+                                        ui.selectable_value(&mut self.maximize, true, "MAX");
+                                        ui.selectable_value(&mut self.maximize, false, "MIN");
+                                    });
+                                ui.text_edit_singleline(&mut self.function_input);
+                            });
                             ui.text_edit_multiline(&mut self.constraints_input);
 
                             if ui.add(egui::Button::new("RUN")).clicked() {
@@ -73,24 +82,17 @@ impl eframe::App for SimplexVisualizer {
                                 }
 
                                 // Then create the resulting simplex instance
-                                let (command, function) = {
-                                    let mut words = self.function_input.split_ascii_whitespace();
-                                    let command = words.next();
-                                    let function_str =
-                                        words.fold(String::new(), |acc, w| acc + w + " ");
-                                    (
-                                        command,
-                                        function_str
-                                            .parse::<LinearFunction>()
-                                            .unwrap_or(LinearFunction::zero()),
-                                    )
-                                };
+                                let function = self.function_input.parse::<LinearFunction>().unwrap_or(LinearFunction::zero());
 
-                                self.simplex = match command {
-                                    Some("max") => Some(constraints.maximize(&function)),
-                                    Some("min") => Some(constraints.minimize(&function)),
-                                    _ => None,
-                                };
+                                self.simplex = Some(
+                                    constraints.maximize(
+                                        &if self.maximize {
+                                            function
+                                        } else {
+                                            -function
+                                        }
+                                    )
+                                );
                             }
                         });
                     })
@@ -114,16 +116,20 @@ impl eframe::App for SimplexVisualizer {
                                 );
                             }
                         });
-                        if ui.add(egui::Button::new("Last Step")).clicked() {
-                            if let Some(simplex) = &mut self.simplex {
-                                simplex.last_step();
+                        ui.horizontal_centered(|ui| {
+                            // Previous button
+                            if ui.add(egui::Button::new("PREVIOUS")).clicked() {
+                                if let Some(simplex) = &mut self.simplex {
+                                    simplex.previous_step();
+                                }
                             }
-                        }
-                        if ui.add(egui::Button::new("Next Step")).clicked() {
-                            if let Some(simplex) = &mut self.simplex {
-                                simplex.next_step(true);
+                            // Next button
+                            if ui.add(egui::Button::new("NEXT")).clicked() {
+                                if let Some(simplex) = &mut self.simplex {
+                                    simplex.next_step(true);
+                                }
                             }
-                        }
+                        })
                     })
             });
 
