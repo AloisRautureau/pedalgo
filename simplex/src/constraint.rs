@@ -94,9 +94,6 @@ impl Constraint {
 
 impl Constraints {
     /// Create a new vector of constraints
-    /// # Example
-    /// ```rust
-    /// ```
     pub fn new() -> Constraints {
         Constraints {
             inner: Vec::new(),
@@ -244,10 +241,14 @@ impl Constraints {
 
         // And replace the variable by the new rhs in other constraints
         let func = self.inner[constraint_index].right.clone();
-        for Constraint { right, .. } in &mut self.inner {
-            right.replace(var, &func)
-        }
+        self.replace_variable_with(var, &func);
     }
+
+	fn replace_variable_with(&mut self, var: &Variable, value: &LinearFunction) {
+        for Constraint { right, .. } in &mut self.inner {
+            right.replace(var, value)
+        }
+	}
 }
 
 impl std::ops::Index<usize> for Constraints {
@@ -333,7 +334,7 @@ impl std::str::FromStr for Constraint {
     /// use std::collections::HashMap;
     /// use std::str::FromStr;
     ///
-    /// let constraint = Constraint::from_str("25 -8x + 12 y +3z <= 12")?;
+    /// let constraint = Constraint::from_str("25 -8x + 12y +3z <= 12").unwrap();
     /// let expected_left = LinearFunction::new(25f32, HashMap::from([(String::from("x"), -8f32), (String::from("y"), 12f32), (String::from("z"), 3f32)]));
     /// let expected_right = LinearFunction::new(12f32, HashMap::new());
     /// let expected = Constraint::new(expected_left, Operator::LessEqual, expected_right);
@@ -503,6 +504,7 @@ mod tests {
     }
     */
 
+    #[test]
     fn test_sub_assign_constraint() {
         use std::collections::HashMap;
         use std::str::FromStr;
