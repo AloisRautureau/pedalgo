@@ -86,14 +86,27 @@ impl LinearFunction {
 
     /// Returns the first variable with a positive coefficient
     pub fn first_positive_coefficient(&self) -> (Variable, Coefficient) {
-        self.coefficients
-            .clone()
-            .into_iter()
-            .find(|(_, c)| !c.is_sign_negative())
-            .expect("searched for a positive coefficient on a constant linear function")
+        // self.coefficients
+        // .clone()
+        // .into_iter()
+        // .find(|(_, c)| !c.is_sign_negative())
+        // .expect("searched for a positive coefficient on a constant linear function")
+
+        let mut h_map: Vec<_> = self.coefficients.clone().into_iter().collect();
+        h_map.sort_by_key(|(var, _)| var.clone());
+        h_map.retain(|(_, coeff)| *coeff != 0.0);
+        let coeff_iter = h_map.iter();
+
+        for (var, coeff) in coeff_iter {
+            if *coeff > 0.0 {
+                return (var.to_string(), *coeff);
+            }
+        }
+
+        ("error".to_string(), 0.0)
     }
 
-    /// Normalizes a linear function with respect to a variable
+    /// Normalizes a linear function with respect to a variable (be careful as it normalizes with a negative one before the variable)
     pub fn normalize(&self, var: Variable) -> (LinearFunction, Coefficient) {
         let mut func = self.clone();
         let var_coeff = if let Some(var_coeff) = self.coefficients.get(&var).copied() {
@@ -401,5 +414,40 @@ impl std::fmt::Display for LinearFunction {
             }?;
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::str::FromStr;
+
+    use super::*;
+
+    #[test]
+    fn test_single_variable_with_coeff() {
+        let single_variable_lf = LinearFunction::single_variable_with_coeff("x".to_string(), 32f32);
+        let expected = LinearFunction::from_str("32x").unwrap();
+
+        assert_eq!(single_variable_lf, expected);
+    }
+
+    #[test]
+    fn test_first_positive_coefficient() {
+        let lf = LinearFunction::from_str("200+5x-6z+3y").unwrap();
+        let var = "x".to_string();
+        let coeff = 5.0;
+
+        assert_eq!(lf.first_positive_coefficient(), (var, coeff));
+    }
+
+    #[test]
+    fn test_normalize() {
+        let lf = LinearFunction::from_str("3x+6y-9z+150").unwrap();
+        let var = "x".to_string();
+        let expected = LinearFunction::from_str("-x-2y+3z-50").unwrap();
+
+        let (normalized_lf, var_coeff) = lf.normalize(var);
+
+        assert_eq!((normalized_lf, var_coeff), (expected, 3.0));
     }
 }

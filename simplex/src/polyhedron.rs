@@ -1,8 +1,8 @@
 //! Used to create a kD representation of a set of constraints to be rendered
-use eframe::{egui_glow, glow};
-use eframe::glow::HasContext;
-use egui::Vec2;
 use crate::constraint::Constraints;
+use eframe::glow::HasContext;
+use eframe::{egui_glow, glow};
+use egui::Vec2;
 
 pub struct PolyhedronRenderer {
     rendering_program: glow::Program,
@@ -19,7 +19,7 @@ impl PolyhedronRenderer {
 
             if !shader_ver.is_new_shader_interface() {
                 eprintln!("Custom 3D painting hasn't been proted to {shader_ver:?}");
-                return Err(())
+                return Err(());
             }
 
             let (vertex_shader_src, fragment_shader_src) = (
@@ -47,20 +47,18 @@ impl PolyhedronRenderer {
 
             let shader_sources = [
                 (glow::VERTEX_SHADER, vertex_shader_src),
-                (glow::FRAGMENT_SHADER, fragment_shader_src)
+                (glow::FRAGMENT_SHADER, fragment_shader_src),
             ];
 
             let shaders: Vec<_> = shader_sources
                 .into_iter()
                 .map(|(shader_type, shader_src)| {
-                    let shader = gl.create_shader(shader_type).expect("failed to create vertex shader");
+                    let shader = gl
+                        .create_shader(shader_type)
+                        .expect("failed to create vertex shader");
                     gl.shader_source(
                         shader,
-                        &format!(
-                            "{}\n{}",
-                            shader_ver.version_declaration(),
-                            shader_src
-                        )
+                        &format!("{}\n{}", shader_ver.version_declaration(), shader_src),
                     );
                     gl.compile_shader(shader);
                     gl.attach_shader(rendering_program, shader);
@@ -70,7 +68,7 @@ impl PolyhedronRenderer {
 
             gl.link_program(rendering_program);
             if !gl.get_program_link_status(rendering_program) {
-                return Err(())
+                return Err(());
             }
 
             for shader in shaders {
@@ -85,7 +83,7 @@ impl PolyhedronRenderer {
             PolyhedronRenderer {
                 rendering_program,
                 vertex_array,
-                view_angle: Vec2::default()
+                view_angle: Vec2::default(),
             }
         })
     }
@@ -98,9 +96,10 @@ impl PolyhedronRenderer {
         unsafe {
             gl.use_program(Some(self.rendering_program));
             gl.uniform_2_f32(
-                gl.get_uniform_location(self.rendering_program, "u_view_angle").as_ref(),
+                gl.get_uniform_location(self.rendering_program, "u_view_angle")
+                    .as_ref(),
                 self.view_angle.x,
-                self.view_angle.y
+                self.view_angle.y,
             );
             gl.bind_vertex_array(Some(self.vertex_array));
             gl.draw_arrays(glow::TRIANGLES, 0, 3)

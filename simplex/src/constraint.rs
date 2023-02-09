@@ -1,6 +1,4 @@
 //! contraintes linéaire
-use std::ops::Index;
-
 use crate::linear_function::LinearFunction;
 use crate::linear_function::Variable;
 use crate::{LinearProgram, Simplex};
@@ -209,6 +207,15 @@ impl Constraints {
         self.inner.len()
     }
 
+    // parse a string into a Constraints
+    pub fn compile(s: &str) -> Result<Self, ()> {
+        let mut constraints = Constraints::default();
+        for line in s.lines().filter(|l| !l.trim().is_empty()) {
+            constraints.add_constraint(line.parse::<Constraint>()?);
+        }
+        Ok(constraints)
+    }
+
     /// Normalizes all constraints with respect to a variable
     pub fn normalize(&self, var: Variable) -> Constraints {
         let mut normalized_constraints = self.clone();
@@ -216,11 +223,10 @@ impl Constraints {
         for i in 0..self.inner.len() {
             normalized_constraints.inner[i] = self.inner[i].normalize(var.clone());
         }
-
         normalized_constraints
     }
 
-    /// Returns the index of the constraints that maximizes 'var' while minimising the corresponding constant
+    /// Returns the index of the constraint that maximizes 'var' while minimising the corresponding constant
     pub fn constraint_max(&self, var: Variable) -> usize {
         let normalized_constraints = self.normalize(var.clone());
 
@@ -229,8 +235,9 @@ impl Constraints {
         let mut current_index = 0;
 
         for constraint in normalized_constraints.inner.iter() {
-            let &index = constraint.right.index(var.clone());
-            if (constraint.right.constant < min_constant) && (index < 0.0) {
+            let coeff = constraint.right[var.clone()];
+
+            if (constraint.right.constant < min_constant) && (coeff < 0.0) {
                 min_constant = constraint.right.constant;
                 max_index = current_index;
                 current_index += 1;
@@ -240,11 +247,11 @@ impl Constraints {
         max_index
     }
 
-    ///
+    /// Performs a pivot step on a particular constraint with respect to a specific variable
     pub fn pivot_with(&self, var: Variable, i: usize) -> (Constraints, LinearFunction) {
         let mut new_constraints = self.clone();
 
-        let &right_coeff = new_constraints.inner[i].right.index(var.clone());
+        let right_coeff = new_constraints.inner[i].right[var.clone()];
         let (evar, left_coeff) = new_constraints.inner[i].left.first_positive_coefficient();
 
         let right_compensation = LinearFunction::single_variable_with_coeff(var, right_coeff);
@@ -340,10 +347,7 @@ impl std::str::FromStr for Constraint {
     /// use std::collections::HashMap;
     /// use std::str::FromStr;
     ///
-    /// let constraint = match Constraint::from_str("25 -8x + 12 y +3z <= 12") {
-    ///    Ok(constraint) => constraint,
-    ///    Err(_) => panic!("Error")
-    /// };
+    /// let constraint = Constraint::from_str("25 -8x + 12 y +3z <= 12")?;
     /// let expected_left = LinearFunction::new(25f32, HashMap::from([(String::from("x"), -8f32), (String::from("y"), 12f32), (String::from("z"), 3f32)]));
     /// let expected_right = LinearFunction::new(12f32, HashMap::new());
     /// let expected = Constraint::new(expected_left, Operator::LessEqual, expected_right);
@@ -357,7 +361,6 @@ impl std::str::FromStr for Constraint {
             tag::<&str, &str, ()>("<"),
             tag::<&str, &str, ()>(">"),
         ));
-        // println!("{s}");
         if let Ok((rhs, (lhs, op))) = many_till(anychar, parse_op)(s) {
             let lhs = lhs
                 .iter()
@@ -466,12 +469,33 @@ impl std::ops::SubAssign<LinearFunction> for Constraint {
     }
 }
 
-/*
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    /*
     #[test]
-    fn test_new() {}
+    fn test_normalize() {
+        let constraints =
+            Constraints::compile("x + 2y >= 0 \n2 + x - 2y <= 4").unwrap();
+        let normalize_constraints = constraints.normalize("x".to_string());
+
+        let expected = Constraints::compile("ε0 = x + 2y\nε1 = 2 - x + 2y").unwrap();
+        assert_eq!(normalize_constraints, expected);
+    }
+    */
+
+    fn test_sub_assign_constraint() {
+        use crate::constraint::Constraint;
+        use crate::constraint::Operator;
+        use std::collections::HashMap;
+        use std::str::FromStr;
+
+        let mut c = Constraint::from_str("0 = 200 - x - y").unwrap();
+        let l_f = LinearFunction::new(0f32, HashMap::from([(String::from("x"), -1f32)]));
+
+        let expected = Constraint::from_str("x = 200 - y + 0x").unwrap();
+        c -= l_f;
+        assert_eq!(c, expected);
+    }
 }
-*/
