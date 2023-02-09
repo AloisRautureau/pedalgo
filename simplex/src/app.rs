@@ -12,14 +12,27 @@ use egui::FontFamily::Proportional;
 use egui::FontId;
 
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub struct SimplexVisualizer {
     function_input: String,
     constraints_input: String,
 
     simplex: Option<Simplex>,
 }
-
+impl Default for SimplexVisualizer {
+    fn default() -> Self {
+        SimplexVisualizer {
+            function_input: String::from("max x + 6y + 13z"),
+            constraints_input: String::from("\
+x <= 200\n\
+y <= 300\n\
+x + y + z <= 400\n\
+y + 3z <= 600\n
+            "),
+            simplex: None
+        }
+    }
+}
 impl eframe::App for SimplexVisualizer {
     fn update(&mut self, ctx: &Context, _frame: &mut Frame) {
 		// Change font sizes
@@ -48,7 +61,7 @@ impl eframe::App for SimplexVisualizer {
                             if ui.add(egui::Button::new("RUN")).clicked() {
                                 // Parse constraints
                                 let mut constraints = Constraints::default();
-                                for line in self.constraints_input.lines() {
+                                for line in self.constraints_input.lines().filter(|l| !l.trim().is_empty()) {
                                     constraints.add_constraint(
                                         line.parse().expect("invalid constraint input"),
                                     );
