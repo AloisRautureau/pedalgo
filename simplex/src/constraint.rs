@@ -35,22 +35,6 @@ pub struct Constraints {
     inner: Vec<Constraint>,
     nb_var_gap: i32,
 }
-impl Constraints {
-    pub fn maximize(&self, to_maximize: &LinearFunction) -> Simplex {
-        Simplex::from(LinearProgram {
-            linear_function: to_maximize.clone(),
-            constraints: self.clone(),
-        })
-    }
-
-    pub fn minimize(&self, _to_minimize: &LinearFunction) -> Simplex {
-        todo!()
-    }
-
-    pub fn iter(&self) -> impl Iterator<Item = &Constraint> {
-        self.inner.iter()
-    }
-}
 
 impl Operator {
     /// ```rust
@@ -104,10 +88,14 @@ impl Constraint {
     // Normalizes a constraint with respect to a variable
     pub fn normalize(&self, var: Variable) -> Constraint {
         let (normalized_rhs, coeff) = self.right.normalize(var);
-        Constraint {
-            left: -(self.left.clone()) / coeff,
-            operator: self.operator.clone(),
-            right: normalized_rhs,
+        if coeff != 0.0 {
+            Constraint {
+                left: -(self.left.clone()) / coeff,
+                operator: self.operator.clone(),
+                right: normalized_rhs,
+            }
+        } else {
+            self.clone()
         }
     }
 }
@@ -122,6 +110,21 @@ impl Constraints {
             inner: Vec::new(),
             nb_var_gap: 0,
         }
+    }
+
+    pub fn maximize(&self, to_maximize: &LinearFunction) -> Simplex {
+        Simplex::from(LinearProgram {
+            linear_function: to_maximize.clone(),
+            constraints: self.clone(),
+        })
+    }
+
+    pub fn minimize(&self, _to_minimize: &LinearFunction) -> Simplex {
+        todo!()
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &Constraint> {
+        self.inner.iter()
     }
 
     /// Add a constraint to the list of constraints
@@ -146,7 +149,7 @@ impl Constraints {
     /// assert_eq!(constraints[0].right, LinearFunction::new(-35f32, HashMap::from([(String::from("x"), -32f32), (String::from("y"), 12f32), (String::from("z"), 10f32)])));
     /// ```
     pub fn add_constraint(&mut self, constraint: Constraint) {
-		let gap_name = "ε";
+        let gap_name = "ε";
 
         let Constraint {
             left,
@@ -155,8 +158,9 @@ impl Constraints {
         } = constraint;
         match operator {
             Operator::LessEqual | Operator::Less => {
-                let x: LinearFunction =
-                    LinearFunction::single_variable(gap_name.to_owned() + &self.nb_var_gap.to_string());
+                let x: LinearFunction = LinearFunction::single_variable(
+                    gap_name.to_owned() + &self.nb_var_gap.to_string(),
+                );
                 self.nb_var_gap += 1;
 
                 let constraint = Constraint {
@@ -167,8 +171,9 @@ impl Constraints {
                 self.inner.push(constraint);
             }
             Operator::GreaterEqual | Operator::Greater => {
-                let x: LinearFunction =
-                    LinearFunction::single_variable(gap_name.to_owned() + &self.nb_var_gap.to_string());
+                let x: LinearFunction = LinearFunction::single_variable(
+                    gap_name.to_owned() + &self.nb_var_gap.to_string(),
+                );
                 self.nb_var_gap += 1;
 
                 let constraint = Constraint {
@@ -179,11 +184,13 @@ impl Constraints {
                 self.inner.push(constraint);
             }
             Operator::Equal => {
-                let x1: LinearFunction =
-                    LinearFunction::single_variable(gap_name.to_owned() + &self.nb_var_gap.to_string());
+                let x1: LinearFunction = LinearFunction::single_variable(
+                    gap_name.to_owned() + &self.nb_var_gap.to_string(),
+                );
                 self.nb_var_gap += 1;
-                let x2: LinearFunction =
-                    LinearFunction::single_variable(gap_name.to_owned() + &self.nb_var_gap.to_string());
+                let x2: LinearFunction = LinearFunction::single_variable(
+                    gap_name.to_owned() + &self.nb_var_gap.to_string(),
+                );
                 self.nb_var_gap += 1;
 
                 let constraint1 = Constraint {
