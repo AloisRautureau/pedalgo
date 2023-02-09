@@ -4,6 +4,7 @@
 pub mod app;
 pub mod constraint;
 pub mod linear_function;
+mod polyhedron;
 
 use constraint::Constraints;
 use linear_function::LinearFunction;

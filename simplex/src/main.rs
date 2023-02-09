@@ -7,7 +7,7 @@ fn main() -> eframe::Result<()> {
     eframe::run_native(
         "simplex",
         eframe::NativeOptions::default(),
-        Box::new(|_cc| Box::<SimplexVisualizer>::default()),
+        Box::new(|cc| Box::new(SimplexVisualizer::init(cc))),
     )
 }
 
@@ -20,9 +20,10 @@ fn main() -> eframe::Result<()>{
         eframe::start_web(
             "simplex",
             eframe::WebOptions::default(),
-            Box::new(|_cc| Box::<SimplexVisualizer>::default()),
+            Box::new(|cc| Box::new(SimplexVisualizer::init(cc))),
         )
         .await
         .expect("could not start simplex visualizer");
-    })
+    });
+    Ok(())
 }
