@@ -68,7 +68,7 @@ impl LinearFunction {
     /// Returns true if the function only has negative coefficients
     pub fn only_negative_coefficients(&self) -> bool {
         for coeff in self.coefficients.values() {
-            if !coeff.is_sign_negative() {
+            if *coeff > 0.0 {
                 return false;
             }
         }
@@ -87,10 +87,10 @@ impl LinearFunction {
     /// Returns the first variable with a positive coefficient
     pub fn first_positive_coefficient(&self) -> (Variable, Coefficient) {
         // self.coefficients
-            // .clone()
-            // .into_iter()
-            // .find(|(_, c)| !c.is_sign_negative())
-            // .expect("searched for a positive coefficient on a constant linear function")
+        // .clone()
+        // .into_iter()
+        // .find(|(_, c)| !c.is_sign_negative())
+        // .expect("searched for a positive coefficient on a constant linear function")
 
         let mut h_map: Vec<_> = self.coefficients.clone().into_iter().collect();
         h_map.sort_by_key(|(var, _)| var.clone());
@@ -416,7 +416,6 @@ impl std::fmt::Display for LinearFunction {
         Ok(())
     }
 }
-
 
 #[cfg(test)]
 mod tests {

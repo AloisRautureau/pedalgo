@@ -1,26 +1,30 @@
 use crate::constraint::Constraints;
 use crate::linear_function::LinearFunction;
+use crate::polyhedron::PolyhedronRenderer;
 use crate::Simplex;
-use eframe::Frame;
+use eframe::{egui_glow, Frame};
 use egui::FontFamily::Proportional;
 use egui::FontId;
-use egui::TextStyle::Body;
-use egui::TextStyle::Button;
-use egui::TextStyle::Heading;
-use egui::TextStyle::Monospace;
-use egui::TextStyle::Small;
+use egui::TextStyle::{Body, Button, Heading, Monospace, Small};
 use egui::{Color32, Context, Style};
+use std::sync::{Arc, Mutex};
 
-#[derive(Debug)]
+const BLUE: Color32 = Color32::from_rgb(69, 133, 136);
+const RED: Color32 = Color32::from_rgb(204, 36, 29);
+const BG: Color32 = Color32::from_rgb(40, 40, 40);
+const FG: Color32 = Color32::from_rgb(235, 219, 178);
+
 pub struct SimplexVisualizer {
     maximize: bool,
     function_input: String,
     constraints_input: String,
 
     simplex: Option<Simplex>,
+    polyhedron_renderer: Arc<Mutex<PolyhedronRenderer>>,
 }
-impl Default for SimplexVisualizer {
-    fn default() -> Self {
+
+impl SimplexVisualizer {
+    pub fn init(cc: &eframe::CreationContext) -> SimplexVisualizer {
         SimplexVisualizer {
             maximize: true,
             function_input: String::from("x + 6y + 13z"),
@@ -32,10 +36,29 @@ x + y + z <= 400\n\
 y + 3z <= 600\n
             ",
             ),
+
             simplex: None,
+            polyhedron_renderer: Arc::new(Mutex::new(
+                PolyhedronRenderer::init(cc.gl.as_ref().unwrap()).unwrap(),
+            )),
         }
     }
+
+    fn draw_polyhedron(&mut self, ui: &mut egui::Ui) {
+        let (rect, response) = ui.allocate_at_least(egui::Vec2::splat(300.0), egui::Sense::drag());
+
+        // Check angle
+        self.polyhedron_renderer.lock().unwrap().view_angle += response.drag_delta() * 0.01;
+
+        let polyhedron_renderer = self.polyhedron_renderer.clone();
+        let callback = Arc::new(egui_glow::CallbackFn::new(move |_info, painter| {
+            polyhedron_renderer.lock().unwrap().draw(painter.gl(), ())
+        }));
+        let callback = egui::PaintCallback { rect, callback };
+        ui.painter().add(callback);
+    }
 }
+
 impl eframe::App for SimplexVisualizer {
     fn update(&mut self, ctx: &Context, _frame: &mut Frame) {
         // Change font sizes
@@ -60,10 +83,7 @@ impl eframe::App for SimplexVisualizer {
                             ui.heading("Linear Program");
                             ui.horizontal(|ui| {
                                 egui::ComboBox::from_label("")
-                                    .selected_text(format!(
-                                        "{}",
-                                        if self.maximize { "MAX" } else { "MIN" }
-                                    ))
+                                    .selected_text((if self.maximize { "MAX" } else { "MIN" }).to_string())
                                     .show_ui(ui, |ui| {
                                         ui.selectable_value(&mut self.maximize, true, "MAX");
                                         ui.selectable_value(&mut self.maximize, false, "MIN");
@@ -72,14 +92,15 @@ impl eframe::App for SimplexVisualizer {
                             });
                             ui.text_edit_multiline(&mut self.constraints_input);
 
-                            if ui.add(egui::Button::new("RUN")).clicked() {
+                            if ui.add(egui::Button::new("COMPILE")).clicked() {
                                 // Parse constraints
-                                let constraints = Constraints::compile(&self.constraints_input).unwrap();
+                                let constraints =
+                                    Constraints::compile(&self.constraints_input).unwrap();
                                 // Parse linear function
                                 let function = self
-                                .function_input
-                                .parse()
-                                .unwrap_or(LinearFunction::zero());
+                                    .function_input
+                                    .parse()
+                                    .unwrap_or(LinearFunction::zero());
 
                                 // Run simplex
                                 self.simplex = Some(constraints.maximize(&if self.maximize {
@@ -110,7 +131,8 @@ impl eframe::App for SimplexVisualizer {
                                 );
                             }
                         });
-                        ui.horizontal_centered(|ui| {
+
+                        ui.horizontal(|ui| {
                             // Previous button
                             if ui.add(egui::Button::new("PREVIOUS")).clicked() {
                                 if let Some(simplex) = &mut self.simplex {
@@ -127,8 +149,7 @@ impl eframe::App for SimplexVisualizer {
                     })
             });
 
-        // TODO: Step buttons
-
         // TODO: Figure display
+        egui::CentralPanel::default().show(ctx, |ui| self.draw_polyhedron(ui));
     }
 }

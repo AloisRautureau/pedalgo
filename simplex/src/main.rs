@@ -3,20 +3,16 @@ use simplex::app::SimplexVisualizer;
 #[cfg(not(target_arch = "wasm32"))]
 fn main() -> eframe::Result<()> {
     tracing_subscriber::fmt::init();
-
-    let mut native_options = eframe::NativeOptions::default();
-
-    native_options.maximized = true;
-
+    
     eframe::run_native(
         "simplex",
-        native_options,
-        Box::new(|_cc| Box::<SimplexVisualizer>::default()),
+        eframe::NativeOptions::default(),
+        Box::new(|cc| Box::new(SimplexVisualizer::init(cc))),
     )
 }
 
 #[cfg(target_arch = "wasm32")]
-fn main() -> eframe::Result<()>{
+fn main() -> eframe::Result<()> {
     console_error_panic_hook::set_once();
     tracing_wasm::set_as_global_default();
 
@@ -24,9 +20,10 @@ fn main() -> eframe::Result<()>{
         eframe::start_web(
             "simplex",
             eframe::WebOptions::default(),
-            Box::new(|_cc| Box::<SimplexVisualizer>::default()),
+            Box::new(|cc| Box::new(SimplexVisualizer::init(cc))),
         )
         .await
         .expect("could not start simplex visualizer");
-    })
+    });
+    Ok(())
 }

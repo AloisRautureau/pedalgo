@@ -4,6 +4,7 @@
 pub mod app;
 pub mod constraint;
 pub mod linear_function;
+mod polyhedron;
 
 use constraint::Constraints;
 use linear_function::LinearFunction;
@@ -26,14 +27,17 @@ impl LinearProgram {
         if use_bland_rule {
             // applies bland rule
             let (var, coeff) = self.linear_function.first_positive_coefficient();
+            println!("----------------------------------------------------");
             println!("Chosen var : {var} with coeff : {coeff}");
             // get the strongest constraint
             let max_index = self.constraints.constraint_max(var.clone());
             // do a pivot step on this particular constraint
-            let (new_constraints, new_value_var) = self.constraints.pivot_with(var.clone(), max_index);
+            let (new_constraints, new_value_var) =
+                self.constraints.pivot_with(var.clone(), max_index);
 
             LinearProgram {
-                linear_function: self.linear_function.clone() + new_value_var * coeff - LinearFunction::single_variable_with_coeff(var, coeff),
+                linear_function: self.linear_function.clone() + new_value_var * coeff
+                    - LinearFunction::single_variable_with_coeff(var, coeff),
                 constraints: new_constraints,
             }
         } else {
@@ -64,7 +68,7 @@ impl Simplex {
     }
 
     fn is_optimal(&self) -> bool {
-        self.historic[self.index]
+        self.current_state()
             .linear_function
             .only_negative_coefficients()
     }
