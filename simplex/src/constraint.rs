@@ -358,7 +358,6 @@ impl std::str::FromStr for Constraint {
             tag::<&str, &str, ()>("<"),
             tag::<&str, &str, ()>(">"),
         ));
-        // println!("{s}");
         if let Ok((rhs, (lhs, op))) = many_till(anychar, parse_op)(s) {
             let lhs = lhs
                 .iter()
@@ -373,6 +372,23 @@ impl std::str::FromStr for Constraint {
         }
     }
 }
+
+impl std::str::FromStr for Constraints {
+    type Err = ();
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut constraints = Constraints::default();
+        for line in s
+            .lines()
+            .filter(|l| !l.trim().is_empty())
+        {
+            constraints.add_constraint(
+                line.parse()?
+            );
+        }
+        Ok(constraints)
+    }
+}
+
 
 /*
 OPERATOR OVERLOADING
@@ -467,7 +483,7 @@ impl std::ops::SubAssign<LinearFunction> for Constraint {
     }
 }
 
-/*
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -475,17 +491,12 @@ mod tests {
     #[test]
     fn test_normalize() {
     use std::str::FromStr;
-    use std::collections::HashMap;
 
-    let mut constraints = Constraints::new(); 
-    let linear_function = LinearFunction::from_str("x + 2y + 3z").unwrap();
-    let constraint1 = Constraint::from_str("x + 2y + 3z <= 4").unwrap();
-    let constraint2 = Constraint::from_str("x + 2y + 3z <= 4").unwrap();
-    let constraint3 = Constraint::from_str("x + 2y + 3z <= 4").unwrap();
-    let constraints = Constraints::new();
-    constraints.add_constraint(constraint1);
-    constraints.add_constraint(constraint2);
-    constraints.add_constraint(constraint3);
+    let _l_f = LinearFunction::from_str("x + 2y + 3z").unwrap();
+    let _constraints = Constraint::from_str("x + 2y + 3z <= 4 \n x + 2y + 3z <= 4 \n x + 2y + 3z <= 4").unwrap();
+    // let normalize_constraints = constraints.normalize();
+
+
     }
 }
-*/
+
