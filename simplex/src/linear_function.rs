@@ -370,14 +370,16 @@ impl std::fmt::Display for LinearFunction {
         h_map.sort_by_key(|(var, _)| var.clone());
         let mut coeff_iter = h_map.iter();
 
-        if let Some((var, coeff)) = coeff_iter.next() {
+        if self.constant != 0.0 {
+            write!(f, "{}", self.constant)
+        } else if let Some((var, coeff)) = coeff_iter.next() {
             match *coeff {
                 x if x == 1.0 => write!(f, "{var}"),
                 x if x == -1.0 => write!(f, "-{var}"),
                 _ => write!(f, "{coeff}{var}"),
             }
         } else {
-            write!(f, "{}", self.constant)
+            write!(f, "0")
         }?;
         for (var, coeff) in coeff_iter {
             match *coeff {
