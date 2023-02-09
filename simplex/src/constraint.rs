@@ -43,10 +43,6 @@ impl Constraints {
         })
     }
 
-    pub fn minimize(&self, _to_minimize: &LinearFunction) -> Simplex {
-        todo!()
-    }
-
     pub fn iter(&self) -> impl Iterator<Item = &Constraint> {
         self.inner.iter()
     }
