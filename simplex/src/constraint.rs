@@ -488,10 +488,9 @@ mod tests {
     }
     */
 
+    #[test]
     fn test_sub_assign_constraint() {
         use std::collections::HashMap;
-        use crate::constraint::Constraint;
-        use crate::constraint::Operator;
         use std::str::FromStr;
         
         let mut c = Constraint::from_str("0 = 200 - x - y").unwrap();
