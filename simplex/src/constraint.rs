@@ -229,7 +229,7 @@ impl Constraints {
         normalized_constraints
     }
 
-    /// Returns the index of the constraints that maximizes 'var' while minimising the corresponding constant
+    /// Returns the index of the constraint that maximizes 'var' while minimising the corresponding constant
     pub fn constraint_max(&self, var: Variable) -> usize {
         let normalized_constraints = self.normalize(var.clone());
 
@@ -238,8 +238,9 @@ impl Constraints {
         let mut current_index = 0;
 
         for constraint in normalized_constraints.inner.iter() {
-            let &index = constraint.right.index(var.clone());
-            if (constraint.right.constant < min_constant) && (index < 0.0) {
+            let coeff = constraint.right[var.clone()];
+
+            if (constraint.right.constant < min_constant) && (coeff < 0.0) {
                 min_constant = constraint.right.constant;
                 max_index = current_index;
                 current_index += 1;
@@ -249,11 +250,11 @@ impl Constraints {
         max_index
     }
 
-    ///
+    /// Performs a pivot step on a particular constraint with respect to a specific variable
     pub fn pivot_with(&self, var: Variable, i: usize) -> (Constraints, LinearFunction) {
         let mut new_constraints = self.clone();
 
-        let &right_coeff = new_constraints.inner[i].right.index(var.clone());
+        let right_coeff = new_constraints.inner[i].right[var.clone()];
         let (evar, left_coeff) = new_constraints.inner[i].left.first_positive_coefficient();
 
         let right_compensation = LinearFunction::single_variable_with_coeff(var, right_coeff);
