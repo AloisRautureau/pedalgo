@@ -92,7 +92,7 @@ impl Simplex {
 
 impl std::fmt::Display for LinearProgram {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "{}", self.linear_function)?;
+        writeln!(f, "max {}", self.linear_function)?;
         writeln!(f, "{}", self.constraints)
     }
 }

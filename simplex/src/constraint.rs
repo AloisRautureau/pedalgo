@@ -280,6 +280,7 @@ impl std::fmt::Display for Operator {
 }
 
 impl std::fmt::Display for Constraint {
+    /// Display a constraint
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{} {} {}", self.left, self.operator, self.right)
     }
@@ -299,7 +300,19 @@ PARSING
  */
 impl std::str::FromStr for Operator {
     type Err = ();
-
+    /// Parses a string into an operator
+    /// # Example
+    /// ``` rust
+    /// use simplex::constraint::Operator;
+    /// use std::str::FromStr;
+    ///
+    /// let operator = match Operator::from_str("<=") {
+    ///    Ok(operator) => operator,
+    ///    Err(_) => panic!("Error")
+    /// };
+    /// let expected = Operator::LessEqual;
+    /// assert_eq!(operator, expected)
+    /// ```
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.trim() {
             "=" => Ok(Operator::Equal),
@@ -450,6 +463,7 @@ impl std::ops::SubAssign<LinearFunction> for Constraint {
     }
 }
 
+/*
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -457,3 +471,4 @@ mod tests {
     #[test]
     fn test_new() {}
 }
+*/

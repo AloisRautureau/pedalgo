@@ -69,12 +69,9 @@ impl eframe::App for SimplexVisualizer {
                             if let Some(simplex) = &self.simplex {
                                 let current_state = simplex.current_state();
                                 ui.colored_label(
-                                    Color32::RED,
-                                    format!("max {}", current_state.linear_function),
+                                    Color32::LIGHT_GRAY,
+                                    format!("{current_state}"),
                                 );
-                                for constraint in current_state.constraints.iter() {
-                                    ui.label(constraint.to_string());
-                                }
                             } else {
                                 ui.colored_label(
                                     Color32::LIGHT_GRAY,
@@ -82,6 +79,14 @@ impl eframe::App for SimplexVisualizer {
                                 );
                             }
                         });
+                        if ui.add(egui::Button::new("NEXT STEP")).clicked() {
+                            // Parse constraints
+                            let mut constraints = Constraints::default();
+                            for line in self.constraints_input.lines() {
+                                constraints.add_constraint(
+                                    line.parse().expect("invalid constraint input"),
+                                );
+                            }
                     })
             });
 

@@ -38,8 +38,8 @@ impl LinearFunction {
         }
     }
 
-	/// Creates a new linear function containing a single variable with a predefinite coefficient
-	pub fn single_variable_with_coeff(var: Variable, coeff: f32) -> LinearFunction {
+    /// Creates a new linear function containing a single variable with a predefinite coefficient
+    pub fn single_variable_with_coeff(var: Variable, coeff: f32) -> LinearFunction {
         LinearFunction {
             constant: 0f32,
             coefficients: HashMap::from([(var, coeff)]),
@@ -155,9 +155,7 @@ impl std::ops::Add<LinearFunction> for LinearFunction {
     }
 }
 
-
-
-impl std::ops::AddAssign<LinearFunction> for LinearFunction {    
+impl std::ops::AddAssign<LinearFunction> for LinearFunction {
     /// ```rust
     /// use std::collections::HashMap;
     /// use simplex::linear_function::LinearFunction;
@@ -368,27 +366,33 @@ impl std::fmt::Display for LinearFunction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut coeff_iter = self.coefficients.iter();
         if self.constant != 0.0 {
-            write!(f, "{} ", self.constant)
+            write!(f, "{}", self.constant)
         } else if let Some((var, coeff)) = coeff_iter.next() {
-            write!(f, "{coeff}{var} ")
+            match *coeff {
+                x if x == 0.0 => write!(f, ""),
+                x if x == 1.0 => write!(f, "{}", var),
+                x if x == -1.0 => write!(f, "-{}", var),
+                _ => write!(f, "{coeff}{var}"),
+            }
         } else {
             return write!(f, "0");
         }?;
         for (var, coeff) in coeff_iter {
-            write!(
-                f,
-                "{}{}{var}",
-                if coeff.is_sign_negative() {
-                    "- "
-                } else {
-                    "+ "
-                },
-                if *coeff == 1.0 {
-                    String::new()
-                } else {
-                    coeff.abs().to_string()
-                }
-            )?
+            match *coeff {
+                x if x == 0.0 => write!(f, ""),
+                x if x == 1.0 => write!(f, "{}", var),
+                x if x == -1.0 => write!(f, " - {}", var),
+                _ => write!(
+                    f,
+                    "{}{}{var}",
+                    if coeff.is_sign_positive() {
+                        " + "
+                    } else {
+                        " - "
+                    },
+                    coeff.abs(),
+                ),
+            }?;
         }
         Ok(())
     }
