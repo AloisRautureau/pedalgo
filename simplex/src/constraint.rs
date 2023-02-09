@@ -146,6 +146,8 @@ impl Constraints {
     /// assert_eq!(constraints[0].right, LinearFunction::new(-35f32, HashMap::from([(String::from("x"), -32f32), (String::from("y"), 12f32), (String::from("z"), 10f32)])));
     /// ```
     pub fn add_constraint(&mut self, constraint: Constraint) {
+		let gap_name = "ε";
+
         let Constraint {
             left,
             operator,
@@ -154,7 +156,7 @@ impl Constraints {
         match operator {
             Operator::LessEqual | Operator::Less => {
                 let x: LinearFunction =
-                    LinearFunction::single_variable("E".to_owned() + &self.nb_var_gap.to_string());
+                    LinearFunction::single_variable(gap_name.to_owned() + &self.nb_var_gap.to_string());
                 self.nb_var_gap += 1;
 
                 let constraint = Constraint {
@@ -166,7 +168,7 @@ impl Constraints {
             }
             Operator::GreaterEqual | Operator::Greater => {
                 let x: LinearFunction =
-                    LinearFunction::single_variable("E".to_owned() + &self.nb_var_gap.to_string());
+                    LinearFunction::single_variable(gap_name.to_owned() + &self.nb_var_gap.to_string());
                 self.nb_var_gap += 1;
 
                 let constraint = Constraint {
@@ -178,10 +180,10 @@ impl Constraints {
             }
             Operator::Equal => {
                 let x1: LinearFunction =
-                    LinearFunction::single_variable("E".to_owned() + &self.nb_var_gap.to_string());
+                    LinearFunction::single_variable(gap_name.to_owned() + &self.nb_var_gap.to_string());
                 self.nb_var_gap += 1;
                 let x2: LinearFunction =
-                    LinearFunction::single_variable("E".to_owned() + &self.nb_var_gap.to_string());
+                    LinearFunction::single_variable(gap_name.to_owned() + &self.nb_var_gap.to_string());
                 self.nb_var_gap += 1;
 
                 let constraint1 = Constraint {
