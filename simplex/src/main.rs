@@ -4,9 +4,13 @@ use simplex::app::SimplexVisualizer;
 fn main() {
     tracing_subscriber::fmt::init();
 
+    let mut native_options = eframe::NativeOptions::default();
+
+    native_options.maximized = true;
+
     eframe::run_native(
         "simplex",
-        eframe::NativeOptions::default(),
+        native_options,
         Box::new(|_cc| Box::<SimplexVisualizer>::default()),
     );
     // Initialisation of the simplex
