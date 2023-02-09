@@ -365,9 +365,12 @@ impl std::str::FromStr for LinearFunction {
 
 impl std::fmt::Display for LinearFunction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        // TO CLEAN
+        // sort the hashmap by variable name
+        // filtre for the non-zero coefficients
+        // then iterate over the coefficients
         let mut h_map: Vec<_> = self.coefficients.clone().into_iter().collect();
         h_map.sort_by_key(|(var, _)| var.clone());
+        h_map.retain(|(_, coeff)| *coeff != 0.0);
         let mut coeff_iter = h_map.iter();
 
         if self.constant != 0.0 {
