@@ -3,6 +3,14 @@ use crate::linear_function::LinearFunction;
 use crate::Simplex;
 use eframe::Frame;
 use egui::{Color32, Context, Style};
+use egui::TextStyle::Body;
+use egui::TextStyle::Button;
+use egui::TextStyle::Heading;
+use egui::TextStyle::Monospace;
+use egui::TextStyle::Small;
+use egui::FontFamily::Proportional;
+use egui::FontId;
+
 
 #[derive(Default, Debug)]
 pub struct SimplexVisualizer {
@@ -14,6 +22,18 @@ pub struct SimplexVisualizer {
 
 impl eframe::App for SimplexVisualizer {
     fn update(&mut self, ctx: &Context, _frame: &mut Frame) {
+		// Change font sizes
+		let mut style = (*ctx.style()).clone();
+		style.text_styles = [
+			(Heading, FontId::new(30.0, Proportional)),
+			(Body, FontId::new(24.0, Proportional)),
+			(Monospace, FontId::new(14.0, Proportional)),
+			(Button, FontId::new(14.0, Proportional)),
+			(Small, FontId::new(10.0, Proportional)),
+		]
+		.into();
+		ctx.set_style(style);
+
         egui::Area::new("Linear Program")
             .default_pos(egui::pos2(32f32, 512f32))
             .show(ctx, |ui| {
@@ -79,14 +99,6 @@ impl eframe::App for SimplexVisualizer {
                                 );
                             }
                         });
-                        if ui.add(egui::Button::new("NEXT STEP")).clicked() {
-                            // Parse constraints
-                            let mut constraints = Constraints::default();
-                            for line in self.constraints_input.lines() {
-                                constraints.add_constraint(
-                                    line.parse().expect("invalid constraint input"),
-                                );
-                            }
                     })
             });
 
