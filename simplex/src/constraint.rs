@@ -1,5 +1,5 @@
 //! contraintes linéaire
-use std::ops::Index;
+//use std::ops::Index;
 
 use crate::linear_function::LinearFunction;
 use crate::linear_function::Variable;
@@ -209,7 +209,6 @@ impl Constraints {
         self.inner.len()
     }
 
-
     /// Normalizes all constraints with respect to a variable
     pub fn normalize(&self, var: Variable) -> Constraints {
         let mut normalized_constraints = self.clone();
@@ -223,19 +222,26 @@ impl Constraints {
     /// Returns the index of the constraint that maximizes 'var' while minimising the corresponding constant
     pub fn constraint_max(&self, var: Variable) -> usize {
         let normalized_constraints = self.normalize(var.clone());
+        println!("Normalized constraints :\n{}", normalized_constraints);
 
         let mut max_index = 0;
         let mut min_constant = f32::INFINITY;
         let mut current_index = 0;
 
-        for constraint in normalized_constraints.inner.iter() {
+        for constraint in normalized_constraints.iter() {
             let coeff = constraint.right[var.clone()];
+
+            println!(
+                "In current contraint ({} with i = {}) : {} * {}",
+                constraint, current_index, coeff, var
+            );
 
             if (constraint.right.constant < min_constant) && (coeff < 0.0) {
                 min_constant = constraint.right.constant;
                 max_index = current_index;
-                current_index += 1;
             }
+
+            current_index += 1;
         }
 
         max_index
@@ -244,16 +250,24 @@ impl Constraints {
     /// Performs a pivot step on a particular constraint with respect to a specific variable
     pub fn pivot_with(&self, var: Variable, i: usize) -> (Constraints, LinearFunction) {
         let mut new_constraints = self.clone();
+        let mut current_constraint = new_constraints.inner[i].clone();
+        println!("Current constraint (i = {}): {}", i, current_constraint);
 
-        let right_coeff = new_constraints.inner[i].right[var.clone()];
-        let (evar, left_coeff) = new_constraints.inner[i].left.first_positive_coefficient();
-
+        let right_coeff = current_constraint.right[var.clone()];
         let right_compensation = LinearFunction::single_variable_with_coeff(var, right_coeff);
-        let left_compensation = LinearFunction::single_variable_with_coeff(evar, left_coeff);
-        new_constraints.inner[i] -= right_compensation;
-        new_constraints.inner[i] -= left_compensation;
 
-        let rhs = new_constraints.inner[i].right.clone();
+        println!("Right compensation : {}", right_compensation);
+
+        current_constraint -= current_constraint.left.clone();
+        current_constraint -= right_compensation;
+
+        println!("Constraint after transformation : {}", current_constraint);
+
+        current_constraint /= -right_coeff;
+
+        let rhs = current_constraint.right.clone();
+        new_constraints.inner[i] = current_constraint;
+
         (new_constraints, rhs)
     }
 }
@@ -377,18 +391,12 @@ impl std::str::FromStr for Constraints {
     type Err = ();
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut constraints = Constraints::default();
-        for line in s
-            .lines()
-            .filter(|l| !l.trim().is_empty())
-        {
-            constraints.add_constraint(
-                line.parse()?
-            );
+        for line in s.lines().filter(|l| !l.trim().is_empty()) {
+            constraints.add_constraint(line.parse()?);
         }
         Ok(constraints)
     }
 }
-
 
 /*
 OPERATOR OVERLOADING
@@ -474,6 +482,7 @@ impl std::ops::SubAssign<LinearFunction> for Constraint {
     /// let expected_left = LinearFunction::new(32f32, HashMap::from([(String::from("x"), 10f32), (String::from("y"), -5f32)]));
     /// let expected_right = LinearFunction::new(27f32, HashMap::from([(String::from("x"), -12f32), (String::from("y"), 12f32)]));
     /// let expected = Constraint::new(expected_left, Operator::Equal, expected_right);
+    ///
     /// c -= var_x;
     /// assert_eq!(c, expected);
     /// ```
@@ -483,6 +492,24 @@ impl std::ops::SubAssign<LinearFunction> for Constraint {
     }
 }
 
+impl std::ops::Div<f32> for Constraint {
+    type Output = Constraint;
+
+    fn div(self, rhs: f32) -> Self::Output {
+        Constraint {
+            left: self.left / rhs,
+            operator: self.operator,
+            right: self.right / rhs,
+        }
+    }
+}
+
+impl std::ops::DivAssign<f32> for Constraint {
+    fn div_assign(&mut self, rhs: f32) {
+        self.left /= rhs;
+        self.right /= rhs;
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -490,13 +517,27 @@ mod tests {
 
     #[test]
     fn test_normalize() {
-    use std::str::FromStr;
+        use std::str::FromStr;
 
-    let _l_f = LinearFunction::from_str("x + 2y + 3z").unwrap();
-    let _constraints = Constraint::from_str("x + 2y + 3z <= 4 \n x + 2y + 3z <= 4 \n x + 2y + 3z <= 4").unwrap();
-    // let normalize_constraints = constraints.normalize();
+        let _l_f = LinearFunction::from_str("x + 2y + 3z").unwrap();
+        let _constraints =
+            Constraint::from_str("x + 2y + 3z <= 4 \n x + 2y + 3z <= 4 \n x + 2y + 3z <= 4")
+                .unwrap();
+        // let normalize_constraints = constraints.normalize();
+    }
 
+    #[test]
+    fn test_sub_assign_constraint() {
+        use crate::constraint::Constraint;
+        use std::collections::HashMap;
+        use std::str::FromStr;
 
+        let mut c = Constraint::from_str("0 = 200 - x - y").unwrap();
+        let l_f = LinearFunction::new(0f32, HashMap::from([(String::from("x"), -1f32)]));
+
+        let expected = Constraint::from_str("x = 200 - y - 0x").unwrap();
+
+        c -= l_f;
+        assert_eq!(c, expected);
     }
 }
-

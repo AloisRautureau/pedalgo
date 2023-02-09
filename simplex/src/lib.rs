@@ -26,11 +26,13 @@ impl LinearProgram {
         if use_bland_rule {
             // applies bland rule
             let (var, coeff) = self.linear_function.first_positive_coefficient();
+            println!("----------------------------------------------------");
             println!("Chosen var : {var} with coeff : {coeff}");
             // get the strongest constraint
             let max_index = self.constraints.constraint_max(var.clone());
             // do a pivot step on this particular constraint
-            let (new_constraints, new_value_var) = self.constraints.pivot_with(var.clone(), max_index);
+            let (new_constraints, new_value_var) =
+                self.constraints.pivot_with(var.clone(), max_index);
 
             LinearProgram {
                 linear_function: self.linear_function.clone() + new_value_var * coeff - LinearFunction::single_variable_with_coeff(var, coeff),
@@ -64,23 +66,22 @@ impl Simplex {
     }
 
     fn is_optimal(&self) -> bool {
-        self.historic[self.index]
+        self.current_state()
             .linear_function
             .only_negative_coefficients()
     }
 
     pub fn next_step(&mut self, use_bland_rule: bool) {
-        match (self.is_optimal(), self.index == self.historic.len() - 1) {
-            (false, true) => {
-                let new_state = self.current_state().pivot(use_bland_rule);
-                self.historic.push(new_state);
-                self.index += 1;
-            }
-            (false, false) => {
-                self.index += 1;
-            }
-            (_, _) => ()
-        };
+        if self.is_optimal() {
+            return;
+        }
+
+        if self.index == self.historic.len() - 1 {
+            let new_state = self.current_state().pivot(use_bland_rule);
+            self.historic.push(new_state);
+        }
+
+        self.index += 1;
     }
 
     pub fn previous_step(&mut self) {
