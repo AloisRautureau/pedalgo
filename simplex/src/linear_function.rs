@@ -365,9 +365,7 @@ impl std::str::FromStr for LinearFunction {
 impl std::fmt::Display for LinearFunction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut coeff_iter = self.coefficients.iter();
-        if self.constant != 0.0 {
-            write!(f, "{}", self.constant)
-        } else if let Some((var, coeff)) = coeff_iter.next() {
+        if let Some((var, coeff)) = coeff_iter.next() {
             match *coeff {
                 x if x == 0.0 => write!(f, ""),
                 x if x == 1.0 => write!(f, "{}", var),
@@ -375,7 +373,7 @@ impl std::fmt::Display for LinearFunction {
                 _ => write!(f, "{coeff}{var}"),
             }
         } else {
-            return write!(f, "0");
+            write!(f, "{}", self.constant)
         }?;
         for (var, coeff) in coeff_iter {
             match *coeff {
