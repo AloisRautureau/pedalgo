@@ -86,11 +86,24 @@ impl LinearFunction {
 
     /// Returns the first variable with a positive coefficient
     pub fn first_positive_coefficient(&self) -> (Variable, Coefficient) {
-        self.coefficients
-            .clone()
-            .into_iter()
-            .find(|(_, c)| !c.is_sign_negative())
-            .expect("searched for a positive coefficient on a constant linear function")
+        // self.coefficients
+            // .clone()
+            // .into_iter()
+            // .find(|(_, c)| !c.is_sign_negative())
+            // .expect("searched for a positive coefficient on a constant linear function")
+
+        let mut h_map: Vec<_> = self.coefficients.clone().into_iter().collect();
+        h_map.sort_by_key(|(var, _)| var.clone());
+        h_map.retain(|(_, coeff)| *coeff != 0.0);
+        let coeff_iter = h_map.iter();
+
+        for (var, coeff) in coeff_iter {
+            if *coeff > 0.0 {
+                return (var.to_string(), *coeff);
+            }
+        }
+
+        ("error".to_string(), 0.0)
     }
 
     /// Normalizes a linear function with respect to a variable
