@@ -96,17 +96,25 @@ impl PolyhedronRenderer {
     pub fn polyhedron_from_constraints(&mut self, simplex: &Simplex) {
         let bfs_points = simplex.current_state().bfs_point();
         let mut points = vec!();
+        println!("{:?}", bfs_points);
 
-        for point in bfs_points {
+        let max_factor = bfs_points
+            .iter()
+            .flatten()
+            .copied()
+            .max_by(|a, b| a.total_cmp(&b))
+            .unwrap_or(1.0);
+
+        for (_, point) in bfs_points.iter().enumerate() {
             let mut td_point = [0.0; 3];
             for (i, v) in point.iter().enumerate() {
-                td_point[i] = *v;
+                td_point[i] = *v / max_factor;
             }
+            td_point[2] = -td_point[2];
             points.push(td_point)
         }
 
         self.points = points;
-        println!("{:?}", self.points)
     }
 
     pub fn draw(&mut self, gl: &glow::Context, current_point: &[f32; 3]) {
@@ -132,7 +140,7 @@ impl PolyhedronRenderer {
             gl.enable_vertex_array_attrib(self.vertex_array, 0);
             gl.bind_buffer(glow::ARRAY_BUFFER, Some(self.buffer));
             gl.vertex_attrib_pointer_f32(0, 3, glow::FLOAT, false, 0, 0);
-            gl.draw_arrays(glow::TRIANGLES, 0, self.points.len() as i32);
+            gl.draw_arrays(glow::TRIANGLE_STRIP, 0, self.points.len() as i32);
             gl.disable_vertex_attrib_array(0);
         }
     }
