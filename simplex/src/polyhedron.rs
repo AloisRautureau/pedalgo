@@ -94,7 +94,7 @@ impl PolyhedronRenderer {
     }
 
     pub fn polyhedron_from_constraints(&mut self, simplex: &Simplex) {
-        let bfs_points = simplex.bfs_point();
+        let bfs_points = simplex.current_state().bfs_point();
         let mut points = vec!();
 
         for point in bfs_points {
@@ -117,7 +117,7 @@ impl PolyhedronRenderer {
 
             self.buffer = gl.create_buffer().expect("could not create buffer");
             gl.bind_buffer(glow::ARRAY_BUFFER, Some(self.buffer));
-            gl.buffer_data_size(glow::ARRAY_BUFFER, size_of_val(data) as i32, glow::STATIC_DRAW);
+            gl.buffer_data_size(glow::ARRAY_BUFFER, data.len() as i32, glow::STATIC_DRAW);
             gl.buffer_data_u8_slice(glow::ARRAY_BUFFER, data, glow::STATIC_DRAW);
 
             gl.use_program(Some(self.rendering_program));
@@ -131,8 +131,8 @@ impl PolyhedronRenderer {
             gl.bind_vertex_array(Some(self.vertex_array));
             gl.enable_vertex_array_attrib(self.vertex_array, 0);
             gl.bind_buffer(glow::ARRAY_BUFFER, Some(self.buffer));
-            gl.vertex_attrib_pointer_f32(0, self.points.len() as i32, glow::FLOAT, false, 0, 0);
-            gl.draw_arrays(glow::LINE_LOOP, 0, self.points.len() as i32);
+            gl.vertex_attrib_pointer_f32(0, 3, glow::FLOAT, false, 0, 0);
+            gl.draw_arrays(glow::TRIANGLES, 0, self.points.len() as i32);
             gl.disable_vertex_attrib_array(0);
         }
     }

@@ -101,6 +101,7 @@ impl eframe::App for SimplexVisualizer {
 
                                 // Run simplex
                                 let simplex = constraints.maximize(&if self.maximize { function } else { -function });
+                                println!("{}", simplex.current_state());
                                 self.polyhedron_renderer.lock().unwrap().polyhedron_from_constraints(&simplex);
                                 self.simplex = Some(simplex);
                             }
@@ -149,6 +150,8 @@ impl eframe::App for SimplexVisualizer {
                     })
             });
 
-        egui::CentralPanel::default().show(ctx, |ui| self.draw_polyhedron(ui));
+        if self.simplex.is_some() {
+            egui::CentralPanel::default().show(ctx, |ui| self.draw_polyhedron(ui));
+        }
     }
 }
