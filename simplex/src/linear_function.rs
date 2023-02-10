@@ -1,6 +1,4 @@
 use std::collections::HashMap;
-use std::thread::panicking;
-
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::{alpha1, multispace0};
@@ -112,6 +110,11 @@ impl LinearFunction {
         if let Some(coeff) = self.coefficients.remove(var) {
             *self += func.clone() * coeff
         }
+    }
+
+    /// Returns an iterator over the variables
+    pub fn var_iter(&self) -> impl Iterator<Item = &Variable> {
+        self.coefficients.keys()
     }
 
     pub fn is_one_normalized_var(&self) -> bool {
@@ -341,7 +344,6 @@ impl std::str::FromStr for LinearFunction {
     /// let expected = LinearFunction::new(3f32, HashMap::from([(String::from("x"), -2f32)]));
     /// assert_eq!("3 - 2x".parse::<LinearFunction>().unwrap(), expected)
     /// ```
-    /// TODO: Clean this
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         fn parse_variable(input: &str) -> IResult<&str, (Variable, Coefficient)> {
             let (rest, positive) = if let Ok((rest, sign)) =

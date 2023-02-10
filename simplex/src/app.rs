@@ -9,10 +9,10 @@ use egui::TextStyle::{Body, Button, Heading, Monospace, Small};
 use egui::{Color32, Context, Style};
 use std::sync::{Arc, Mutex};
 
-const BLUE: Color32 = Color32::from_rgb(69, 133, 136);
-const RED: Color32 = Color32::from_rgb(204, 36, 29);
-const BG: Color32 = Color32::from_rgb(40, 40, 40);
-const FG: Color32 = Color32::from_rgb(235, 219, 178);
+const _BLUE: Color32 = Color32::from_rgb(69, 133, 136);
+const _RED: Color32 = Color32::from_rgb(204, 36, 29);
+const _BG: Color32 = Color32::from_rgb(40, 40, 40);
+const _FG: Color32 = Color32::from_rgb(235, 219, 178);
 
 pub struct SimplexVisualizer {
     maximize: bool,
@@ -149,7 +149,6 @@ impl eframe::App for SimplexVisualizer {
                     })
             });
 
-        // TODO: Figure display
         egui::CentralPanel::default().show(ctx, |ui| self.draw_polyhedron(ui));
     }
 }
