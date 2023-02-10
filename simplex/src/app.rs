@@ -4,7 +4,7 @@ use crate::polyhedron::PolyhedronRenderer;
 use crate::Simplex;
 use eframe::{egui_glow, Frame};
 use egui::FontFamily::Proportional;
-use egui::FontId;
+use egui::{FontId, Sense};
 use egui::TextStyle::{Body, Button, Heading, Monospace, Small};
 use egui::{Color32, Context, Style};
 use std::sync::{Arc, Mutex};
@@ -40,16 +40,19 @@ y + 3z <= 600\n
     }
 
     fn draw_polyhedron(&mut self, ui: &mut egui::Ui) {
-        let (rect, response) = ui.allocate_at_least(egui::Vec2::splat(300.0), egui::Sense::drag());
+        let (rect, response) = ui.allocate_exact_size(ui.available_size_before_wrap(), Sense::drag());
+        ui.expand_to_include_rect(rect);
 
         // Check angle
         self.polyhedron_renderer.lock().unwrap().view_angle += response.drag_delta() * 0.01;
-
         let polyhedron_renderer = self.polyhedron_renderer.clone();
-        let callback = Arc::new(egui_glow::CallbackFn::new(move |_info, painter| {
-            polyhedron_renderer.lock().unwrap().draw(painter.gl(), &[0.0; 3])
-        }));
-        let callback = egui::PaintCallback { rect, callback };
+
+        let callback = egui::PaintCallback {
+            rect,
+            callback: Arc::new(egui_glow::CallbackFn::new(move |info, painter| {
+                polyhedron_renderer.lock().unwrap().draw(painter.gl(), info.screen_size_px, &[0.0; 3])
+            }))
+        };
         ui.painter().add(callback);
     }
 }
