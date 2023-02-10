@@ -101,6 +101,18 @@ impl LinearProgram {
         }
         points
     }
+
+    pub fn lines(&self) -> Vec<(Vec<f32>,Vec<f32>)> {
+        let mut edges: Vec<(Vec<f32>,Vec<f32>)> = Vec::new();
+        for point in self.bfs_point() {
+            for var in self.linear_function.var_iter() {
+                let mut new_programm = self.clone();
+                new_programm.pivot(var.to_string());
+                edges.push((point.clone(), new_programm.point()));
+            }
+        }
+    edges
+    }
 }
 
 impl Simplex {
@@ -244,6 +256,28 @@ mod tests {
         assert_eq!(
             lp.bfs_point().len(),
             8
+        );
+    }
+
+    #[test]
+    fn test_lines() {
+        use std::str::FromStr;
+        let lp = LinearProgram {
+            linear_function: LinearFunction::from_str("x + 6y + 13z").unwrap(),
+            constraints: Constraints::compile(
+                "x <= 200\n
+            y <= 300\n
+            x + y + z <= 400\n
+            y + 3z <= 600"
+            )
+            .unwrap(),
+        };
+        let lines_lp = lp.lines();
+        println!("{:?}", lines_lp);
+        assert_eq!(
+            lp.lines().len(),
+            // normally 26
+            24
         );
     }
     
