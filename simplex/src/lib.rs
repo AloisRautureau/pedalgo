@@ -99,7 +99,7 @@ impl Simplex {
             if self.index == self.historic.len() - 1 {
                 let mut new = self.current_state().clone();
 
-                new.pivot(use_bland_rule, var);
+                new.pivot(var);
                 self.historic.push(new);
             }
             self.index += 1
