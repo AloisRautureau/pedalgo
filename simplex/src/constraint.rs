@@ -40,10 +40,6 @@ impl Operator {
     /// let a = Operator::Less;
     /// let b = Operator::GreaterEqual;
     /// assert_eq!(a.inverse(), b);
-    ///
-    /// let c = Operator::Greater;
-    /// let d = Operator::LessEqual;
-    /// assert_eq!(c.inverse(), d)
     /// ```
     pub fn inverse(&self) -> Operator {
         match self {
@@ -64,13 +60,13 @@ impl Constraint {
     /// use simplex::constraint::{Constraint, Operator};
     /// use simplex::linear_function::LinearFunction;
     ///
-    /// let lhs = LinearFunction::new(30f32, HashMap::from([(String::from("x"), 32f32), (String::from("z"), -5f32)]));
-    /// let rhs = LinearFunction::new(-5f32, HashMap::from([(String::from("y"), 12f32), (String::from("z"), 5f32)]));
+    /// let lhs = LinearFunction::new(0f32, HashMap::from([(String::from("x"), 32f32)]));
+    /// let rhs = LinearFunction::new(0f32, HashMap::new());
     /// let op = Operator::LessEqual;
     /// let expected = Constraint {
-    ///    left: LinearFunction::new(30f32, HashMap::from([(String::from("x"), 32f32), (String::from("z"), -5f32)])),
+    ///    left: LinearFunction::new(0f32, HashMap::from([(String::from("x"), 32f32)])),
     ///    operator: Operator::LessEqual,
-    ///    right: LinearFunction::new(-5f32, HashMap::from([(String::from("y"), 12f32), (String::from("z"), 5f32)]))
+    ///    right: LinearFunction::new(0f32, HashMap::new()),
     /// };
     /// let n = Constraint::new(lhs, op, rhs);
     /// assert_eq!(n, expected)
@@ -83,7 +79,11 @@ impl Constraint {
         }
     }
 
-    // Normalizes a constraint with respect to a variable
+    /// Normalize a constraint with respect to a variable
+    /// # Example
+    /// ```rust
+    ///
+    /// ```
     pub fn normalize(&self, var: Variable) -> Constraint {
         let (normalized_rhs, coeff) = self.right.normalize(var);
         if coeff != 0.0 {
@@ -96,13 +96,17 @@ impl Constraint {
             self.clone()
         }
     }
+
+    pub fn is_valid_linear_programm(&self) -> bool {
+        self.left.is_one_normalized_var() && self.operator == Operator::Equal
+    }
+
+    pub fn non_gap_variables(&self) -> Vec<Variable> {
+        union(self.left.non_gap_variables(), self.right.non_gap_variables())
+    }
 }
 
 impl Constraints {
-    /// Create a new vector of constraints
-    /// # Example
-    /// ```rust
-    /// ```
     pub fn new() -> Constraints {
         Constraints {
             inner: Vec::new(),
@@ -229,7 +233,7 @@ impl Constraints {
     /// Returns the index of the constraint that maximizes 'var' while minimising the corresponding constant
     pub fn constraint_max(&self, var: Variable) -> usize {
         let normalized_constraints = self.normalize(var.clone());
-        println!("Normalized constraints :\n{}", normalized_constraints);
+        println!("Normalized constraints :\n{normalized_constraints}");
 
         let mut max_index = 0;
         let mut min_constant = f32::INFINITY;
@@ -268,7 +272,7 @@ impl Constraints {
         current_constraint -= current_constraint.left.clone();
         current_constraint -= right_compensation;
 
-        println!("Constraint after transformation : {}", current_constraint);
+        println!("Constraint after transformation : {current_constraint}");
 
         current_constraint /= -right_coeff;
 
@@ -277,11 +281,25 @@ impl Constraints {
 
         (new_constraints, rhs)
     }
+    pub fn is_valid(&self) -> bool {
+        for constraint in self.inner.iter() {
+            if !constraint.is_valid_linear_programm() {
+                return false;
+            }
+        }
+        true
+    }
+    pub fn non_gap_variables(&self) -> Vec<Variable> {
+        let mut variables = Vec::new();
+        for constraint in self.inner.iter() {
+            variables = union(variables, constraint.non_gap_variables());
+        }
+        variables
+    }
 }
 
 impl std::ops::Index<usize> for Constraints {
     type Output = Constraint;
-
     fn index(&self, index: usize) -> &Self::Output {
         &self.inner[index]
     }
@@ -290,6 +308,16 @@ impl std::ops::IndexMut<usize> for Constraints {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         &mut self.inner[index]
     }
+}
+
+pub fn union<T: Clone + PartialEq>(a: Vec<T>, b: Vec<T>) -> Vec<T> {
+    let mut res = a.clone();
+    for elem in b {
+        if !a.contains(&elem) {
+            res.push(elem);
+        }
+    }
+    res
 }
 
 impl std::fmt::Display for Operator {
@@ -362,7 +390,7 @@ impl std::str::FromStr for Constraint {
     /// use std::collections::HashMap;
     /// use std::str::FromStr;
     ///
-    /// let constraint = Constraint::from_str("25 -8x + 12 y +3z <= 12")?;
+    /// let constraint = Constraint::from_str("25 -8x + 12 y +3z <= 12").unwrap();
     /// let expected_left = LinearFunction::new(25f32, HashMap::from([(String::from("x"), -8f32), (String::from("y"), 12f32), (String::from("z"), 3f32)]));
     /// let expected_right = LinearFunction::new(12f32, HashMap::new());
     /// let expected = Constraint::new(expected_left, Operator::LessEqual, expected_right);
@@ -508,17 +536,52 @@ impl std::ops::DivAssign<f32> for Constraint {
 mod tests {
     use super::*;
 
-    /*
+    #[test]
+    fn test_inverse_operator() {
+        let c = Operator::Greater;
+        let d = Operator::LessEqual;
+        assert_eq!(c.inverse(), d)
+    }
+
+    #[test]
+    fn test_new_constrait() {
+        use std::collections::HashMap;
+
+        let lhs = LinearFunction::new(
+            30f32,
+            HashMap::from([(String::from("x"), 32f32), (String::from("z"), -5f32)]),
+        );
+        let rhs = LinearFunction::new(
+            -5f32,
+            HashMap::from([(String::from("y"), 12f32), (String::from("z"), 5f32)]),
+        );
+        let op = Operator::LessEqual;
+        let expected = Constraint {
+            left: LinearFunction::new(
+                30f32,
+                HashMap::from([(String::from("x"), 32f32), (String::from("z"), -5f32)]),
+            ),
+            operator: Operator::LessEqual,
+            right: LinearFunction::new(
+                -5f32,
+                HashMap::from([(String::from("y"), 12f32), (String::from("z"), 5f32)]),
+            ),
+        };
+        let n = Constraint::new(lhs, op, rhs);
+        assert_eq!(n, expected)
+    }
+
     #[test]
     fn test_normalize() {
+        use std::str::FromStr;
         let constraints =
-            Constraints::compile("x + 2y >= 0 \n2 + x - 2y <= 4").unwrap();
-        let normalize_constraints = constraints.normalize("x".to_string());
+            Constraints::compile("x - 2y >= 6 \n 12 + 9x + 3y <= 6\n 1 + 7x - y <= 0").unwrap();
+        let normalize_constraints = constraints.normalize("y".to_string());
 
-        let expected = Constraints::compile("ε0 = x + 2y\nε1 = 2 - x + 2y").unwrap();
-        assert_eq!(normalize_constraints, expected);
+        assert_eq!(normalize_constraints.inner[0].right["y".to_string()], -1.0);
+        assert_eq!(normalize_constraints.inner[1].right["y".to_string()], -1.0);
+        assert_eq!(normalize_constraints.inner[2].right["y".to_string()], -1.0);
     }
-    */
 
     #[test]
     fn test_sub_assign_constraint() {
