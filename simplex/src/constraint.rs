@@ -289,6 +289,15 @@ pub fn is_nearly_equal(a:Vec<f32>, b: Vec<f32>) -> bool {
     true
 }
 
+pub fn normalized_vec(a: Vec<f32>) -> Vec<f32> {
+    let mut res = Vec::new();
+    let sum = a.iter().sum::<f32>();
+    for elem in a {
+        res.push(elem / sum);
+    }
+    res
+}
+
 impl std::fmt::Display for Operator {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -575,4 +584,5 @@ mod tests {
         c -= l_f;
         assert_eq!(c, expected);
     }
+
 }
