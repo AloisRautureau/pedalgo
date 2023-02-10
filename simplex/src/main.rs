@@ -3,7 +3,7 @@ use simplex::app::SimplexVisualizer;
 #[cfg(not(target_arch = "wasm32"))]
 fn main() -> eframe::Result<()> {
     tracing_subscriber::fmt::init();
-    
+
     eframe::run_native(
         "simplex",
         eframe::NativeOptions::default(),

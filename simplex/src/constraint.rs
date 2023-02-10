@@ -79,21 +79,11 @@ impl Constraint {
         }
     }
 
-    /// Normalize a constraint with respect to a variable
-    /// # Example
-    /// ```rust
-    ///
-    /// ```
-    pub fn normalize(&self, var: Variable) -> Constraint {
-        let (normalized_rhs, coeff) = self.right.normalize(var);
-        if coeff != 0.0 {
-            Constraint {
-                left: -(self.left.clone()) / coeff,
-                operator: self.operator.clone(),
-                right: normalized_rhs,
-            }
-        } else {
-            self.clone()
+    // Normalizes a constraint with respect to a variable
+    pub fn normalize(&mut self, var: &Variable) {
+        if self.right.contains(var) {
+            self.left /= self.right[var];
+            self.right /= self.right[var];
         }
     }
 
@@ -107,6 +97,7 @@ impl Constraint {
 }
 
 impl Constraints {
+    /// Create a new vector of constraints
     pub fn new() -> Constraints {
         Constraints {
             inner: Vec::new(),
@@ -221,66 +212,42 @@ impl Constraints {
     }
 
     /// Normalizes all constraints with respect to a variable
-    pub fn normalize(&self, var: Variable) -> Constraints {
-        let mut normalized_constraints = self.clone();
-
-        for i in 0..self.inner.len() {
-            normalized_constraints.inner[i] = self.inner[i].normalize(var.clone());
-        }
-        normalized_constraints
+    pub fn normalize(&mut self, var: &Variable) {
+        self.inner
+            .iter_mut()
+            .for_each(|c| c.normalize(var))
     }
 
     /// Returns the index of the constraint that maximizes 'var' while minimising the corresponding constant
-    pub fn constraint_max(&self, var: Variable) -> usize {
-        let normalized_constraints = self.normalize(var.clone());
-        println!("Normalized constraints :\n{normalized_constraints}");
-
-        let mut max_index = 0;
-        let mut min_constant = f32::INFINITY;
-        let mut current_index = 0;
-
-        for constraint in normalized_constraints.iter() {
-            let coeff = constraint.right[var.clone()];
-
-            println!(
-                "In current contraint ({} with i = {}) : {} * {}",
-                constraint, current_index, coeff, var
-            );
-
-            if (constraint.right.constant < min_constant) && (coeff < 0.0) {
-                min_constant = constraint.right.constant;
-                max_index = current_index;
-            }
-
-            current_index += 1;
-        }
-
-        max_index
+    pub fn most_restrictive(&self, var: &Variable) -> Option<usize> {
+        self
+            .iter()
+            .enumerate()
+            .filter(|(_, c)| c.right.contains(var))
+            .max_by(|(_, Constraint { right: a, .. }), (_, Constraint { right: b, .. })| {
+                let restriction_a = a.constant / a[var];
+                let restriction_b = b.constant / b[var];
+                restriction_a.total_cmp(&restriction_b)
+            })
+            .map(|(i, _)| i)
     }
 
     /// Performs a pivot step on a particular constraint with respect to a specific variable
-    pub fn pivot_with(&self, var: Variable, i: usize) -> (Constraints, LinearFunction) {
-        let mut new_constraints = self.clone();
-        let mut current_constraint = new_constraints.inner[i].clone();
-        println!("Current constraint (i = {}): {}", i, current_constraint);
-
-        let right_coeff = current_constraint.right[var.clone()];
-        let right_compensation = LinearFunction::single_variable_with_coeff(var, right_coeff);
-
-        println!("Right compensation : {}", right_compensation);
-
-        current_constraint -= current_constraint.left.clone();
-        current_constraint -= right_compensation;
-
-        println!("Constraint after transformation : {current_constraint}");
-
-        current_constraint /= -right_coeff;
-
-        let rhs = current_constraint.right.clone();
-        new_constraints.inner[i] = current_constraint;
-
-        (new_constraints, rhs)
+    pub fn pivot(&mut self, constraint_index: usize, var: &Variable) {
+        // Pivot the particular constraint we've targeted
+        {
+            let constraint = &mut self.inner[constraint_index];
+            constraint.normalize(var);
+            *constraint -= constraint.left.clone();
+            *constraint -= LinearFunction::single_variable(var.to_string());
+            *constraint = -constraint.clone();
+        }
+        // And replace the variable by the new rhs in other constraints
+        let func = self.inner[constraint_index].right.clone();
+        self.replace_variable_with(var, &func);
     }
+
+
     pub fn is_valid(&self) -> bool {
         for constraint in self.inner.iter() {
             if !constraint.is_valid_linear_programm() {
@@ -296,6 +263,13 @@ impl Constraints {
         }
         variables
     }
+
+
+	fn replace_variable_with(&mut self, var: &Variable, value: &LinearFunction) {
+        for Constraint { right, .. } in &mut self.inner {
+            right.replace(var, value)
+        }
+	}
 }
 
 impl std::ops::Index<usize> for Constraints {
@@ -390,7 +364,7 @@ impl std::str::FromStr for Constraint {
     /// use std::collections::HashMap;
     /// use std::str::FromStr;
     ///
-    /// let constraint = Constraint::from_str("25 -8x + 12 y +3z <= 12").unwrap();
+    /// let constraint = Constraint::from_str("25 -8x + 12y +3z <= 12").unwrap();
     /// let expected_left = LinearFunction::new(25f32, HashMap::from([(String::from("x"), -8f32), (String::from("y"), 12f32), (String::from("z"), 3f32)]));
     /// let expected_right = LinearFunction::new(12f32, HashMap::new());
     /// let expected = Constraint::new(expected_left, Operator::LessEqual, expected_right);
@@ -532,6 +506,18 @@ impl std::ops::DivAssign<f32> for Constraint {
     }
 }
 
+impl std::ops::Neg for Constraint {
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        Self {
+            left: -self.left,
+            right: -self.right,
+            operator: self.operator.inverse()
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -574,13 +560,13 @@ mod tests {
     #[test]
     fn test_normalize() {
         use std::str::FromStr;
-        let constraints =
+        let mut constraints =
             Constraints::compile("x - 2y >= 6 \n 12 + 9x + 3y <= 6\n 1 + 7x - y <= 0").unwrap();
-        let normalize_constraints = constraints.normalize("y".to_string());
+        constraints.normalize(&"y".to_string());
 
-        assert_eq!(normalize_constraints.inner[0].right["y".to_string()], -1.0);
-        assert_eq!(normalize_constraints.inner[1].right["y".to_string()], -1.0);
-        assert_eq!(normalize_constraints.inner[2].right["y".to_string()], -1.0);
+        assert_eq!(constraints.inner[0].right[&"y".to_string()], -1.0);
+        assert_eq!(constraints.inner[1].right[&"y".to_string()], -1.0);
+        assert_eq!(constraints.inner[2].right[&"y".to_string()], -1.0);
     }
 
     #[test]

@@ -27,6 +27,7 @@ impl LinearFunction {
         }
     }
 
+    /// Returns a linear function with value 0
     pub fn zero() -> LinearFunction {
         LinearFunction::default()
     }
@@ -44,6 +45,15 @@ impl LinearFunction {
         LinearFunction {
             constant: 0f32,
             coefficients: HashMap::from([(var, coeff)]),
+        }
+    }
+
+    /// Returns true if this function contains the given variable (i.e it has a non-zero coefficient)
+    pub fn contains(&self, var: &Variable) -> bool {
+        if let Some(coeff) = self.coefficients.get(var) {
+            *coeff != 0.0
+        } else {
+            false
         }
     }
 
@@ -67,65 +77,41 @@ impl LinearFunction {
     }
 
     /// Returns true if the function only has negative coefficients
-    pub fn only_negative_coefficients(&self) -> bool {
-        for coeff in self.coefficients.values() {
-            if *coeff > 0.0 {
-                return false;
-            }
-        }
-        true
+    pub fn no_positive_coefficient(&self) -> bool {
+        self.coefficients.values()
+            .find(|c| **c > 0.0)
+            .is_none()
     }
 
     /// Returns the variable with the maximal coefficient
-    pub fn max_coefficient(&self) -> (Variable, Coefficient) {
+    pub fn max_coefficient(&self) -> Option<(Variable, Coefficient)> {
         self.coefficients
             .clone()
             .into_iter()
             .max_by(|(_, coeff_x), (_, coeff_y)| coeff_x.total_cmp(coeff_y))
-            .expect("searched for a max coefficient on a constant linear function")
     }
 
     /// Returns the first variable with a positive coefficient
-    pub fn first_positive_coefficient(&self) -> (Variable, Coefficient) {
-        // self.coefficients
-        // .clone()
-        // .into_iter()
-        // .find(|(_, c)| !c.is_sign_negative())
-        // .expect("searched for a positive coefficient on a constant linear function")
+    pub fn first_positive_coefficient(&self, ordered: bool) -> Option<Variable> {
+        let mut coeffs = self.coefficients.clone().into_iter().collect::<Vec<_>>();
+        if ordered { coeffs.sort_by_key(|(v, _)| v.clone()) }
 
-        let mut h_map: Vec<_> = self.coefficients.clone().into_iter().collect();
-        h_map.sort_by_key(|(var, _)| var.clone());
-        h_map.retain(|(_, coeff)| *coeff != 0.0);
-        let coeff_iter = h_map.iter();
-
-        for (var, coeff) in coeff_iter {
-            if *coeff > 0.0 {
-                return (var.to_string(), *coeff);
-            }
-        }
-
-        ("error".to_string(), 0.0)
+        coeffs.into_iter()
+            .find_map(|(v, c)| if c > 0.0 { Some(v)} else { None })
     }
 
-    /// Normalizes a linear function with respect to a variable (be careful as it normalizes with a negative one before the variable)
-    pub fn normalize(&self, var: Variable) -> (LinearFunction, Coefficient) {
-        let mut func = self.clone();
-        let var_coeff = if let Some(var_coeff) = self.coefficients.get(&var).copied() {
-            var_coeff
-        } else {
-            return (func, 0.0);
-        };
-        //.expect("Unknown variable in linear function");
-
-        for (variable, coeff) in self.coefficients.iter() {
-            func[variable.to_string()] = -1f32 * coeff / var_coeff;
+    /// Normalizes this linear function with respect to a given variable
+    pub fn normalize(&mut self, var: &Variable) {
+        if self.contains(var) {
+            *self /= self[var]
         }
+    }
 
-        func[var] = -1f32;
-        func.constant /= var_coeff;
-        func.constant *= -1f32;
-
-        (func, var_coeff)
+    /// Replaces a variable with a given linear function
+    pub fn replace(&mut self, var: &Variable, func: &LinearFunction) {
+        if let Some(coeff) = self.coefficients.remove(var) {
+            *self += func.clone() * coeff
+        }
     }
 
     pub fn is_one_normalized_var(&self) -> bool {
@@ -154,16 +140,16 @@ impl LinearFunction {
     }
 }
 
-impl std::ops::Index<Variable> for LinearFunction {
+impl std::ops::Index<&Variable> for LinearFunction {
     type Output = Coefficient;
 
-    fn index(&self, index: Variable) -> &Self::Output {
-        self.coefficients.get(&index).unwrap_or(&0f32)
+    fn index(&self, index: &Variable) -> &Self::Output {
+        self.coefficients.get(index).unwrap_or(&0f32)
     }
 }
-impl std::ops::IndexMut<Variable> for LinearFunction {
-    fn index_mut(&mut self, index: Variable) -> &mut Self::Output {
-        self.coefficients.entry(index).or_insert(0f32)
+impl std::ops::IndexMut<&Variable> for LinearFunction {
+    fn index_mut(&mut self, index: &Variable) -> &mut Self::Output {
+        self.coefficients.entry(index.to_string()).or_insert(0f32)
     }
 }
 
@@ -376,8 +362,8 @@ impl std::str::FromStr for LinearFunction {
                 };
 
             let (rest, variable) = match preceded(multispace0::<&str, ()>, alpha1)(rest) {
-                Ok((rest, variable)) => (rest, variable.to_string()),
-                Err(_) if found_coeff => (rest, String::new()),
+                Ok((rest, variable)) => (rest, variable),
+                Err(_) if found_coeff => (rest, ""),
                 _ => {
                     return Err(nom::Err::Error(nom::error::Error {
                         input: "aled",
@@ -386,7 +372,7 @@ impl std::str::FromStr for LinearFunction {
                 }
             };
 
-            Ok((rest, (variable, if positive { coeff } else { -coeff })))
+            Ok((rest, (variable.to_string(), if positive { coeff } else { -coeff })))
         }
 
         let mut linear_func = LinearFunction::zero();
@@ -395,7 +381,7 @@ impl std::str::FromStr for LinearFunction {
             if var.is_empty() {
                 linear_func.constant += coeff;
             } else {
-                linear_func[var] += coeff;
+                linear_func[&var] += coeff;
             }
         }
         Ok(linear_func)
@@ -461,20 +447,19 @@ mod tests {
     fn test_first_positive_coefficient() {
         let lf = LinearFunction::from_str("200+5x-6z+3y").unwrap();
         let var = "x".to_string();
-        let coeff = 5.0;
 
-        assert_eq!(lf.first_positive_coefficient(), (var, coeff));
+        assert_eq!(lf.first_positive_coefficient(true), Some(var));
     }
 
     #[test]
     fn test_normalize() {
-        let lf = LinearFunction::from_str("3x+6y-9z+150").unwrap();
-        let var = "x".to_string();
-        let expected = LinearFunction::from_str("-x-2y+3z-50").unwrap();
+        let mut lf = LinearFunction::from_str("3x + 6y - 9z + 150").unwrap();
+        let expected = LinearFunction::from_str("x + 2y - 3z + 50").unwrap();
 
-        let (normalized_lf, var_coeff) = lf.normalize(var);
+        let var = String::from("x");
+        lf.normalize(&var);
 
-        assert_eq!((normalized_lf, var_coeff), (expected, 3.0));
+        assert_eq!(lf, expected);
     }
 
     #[test]
