@@ -24,11 +24,17 @@ pub struct Simplex {
 
 impl LinearProgram {
     pub fn pivot(&mut self, use_bland_rule: bool) {
-        if let Some(var) = self.linear_function.first_positive_coefficient(use_bland_rule) {
-            let max_constraint_index = self.constraints.most_restrictive(&var).expect(&format!("variable {var} does not appear in any constraint, and is therefore unbounded"));
+        if let Some(var) = self
+            .linear_function
+            .first_positive_coefficient(use_bland_rule)
+        {
+            let max_constraint_index = self.constraints.most_restrictive(&var).expect(&format!(
+                "variable {var} does not appear in any constraint, and is therefore unbounded"
+            ));
 
             self.constraints.pivot(max_constraint_index, &var);
-            self.linear_function.replace(&var, &self.constraints[max_constraint_index].right)
+            self.linear_function
+                .replace(&var, &self.constraints[max_constraint_index].right)
         }
     }
 
@@ -109,9 +115,7 @@ impl Simplex {
         while !todo.is_empty() {
             let (programm, index) = todo.pop().unwrap();
             let point = programm.point();
-            if !points.iter().any(|p| *p == point) {
-                
-            }
+            if !points.iter().any(|p| *p == point) {}
         }
         points
     }

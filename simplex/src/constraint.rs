@@ -1,6 +1,7 @@
 //! contraintes linéaire
 use crate::linear_function::LinearFunction;
 use crate::linear_function::Variable;
+use crate::linear_function::GAP_VARIABLE_IDENTIFIER;
 use crate::{LinearProgram, Simplex};
 use nom::branch::alt;
 use nom::bytes::complete::tag;
@@ -29,7 +30,9 @@ pub struct Constraint {
 }
 
 #[derive(Debug, Clone, Default, PartialEq)]
-pub struct Constraints { inner: Vec<Constraint> }
+pub struct Constraints {
+    inner: Vec<Constraint>,
+}
 
 impl Operator {
     /// ```rust
@@ -89,16 +92,17 @@ impl Constraint {
     }
 
     pub fn non_gap_variables(&self) -> Vec<Variable> {
-        union(self.left.non_gap_variables(), self.right.non_gap_variables())
+        union(
+            self.left.non_gap_variables(),
+            self.right.non_gap_variables(),
+        )
     }
 }
 
 impl Constraints {
     /// Create a new vector of constraints
     pub fn new() -> Constraints {
-        Constraints {
-            inner: Vec::new(),
-        }
+        Constraints { inner: Vec::new() }
     }
 
     pub fn maximize(&self, to_maximize: &LinearFunction) -> Simplex {
@@ -134,7 +138,12 @@ impl Constraints {
     /// assert_eq!(constraints[0].right, LinearFunction::new(-35f32, HashMap::from([(String::from("x"), -32f32), (String::from("y"), 12f32), (String::from("z"), 10f32)])));
     /// ```
     pub fn add_constraint(&mut self, constraint: Constraint) {
-        let next_gap_var = || LinearFunction::single_variable(format!("ε{}", self.gap_variables_count()));
+        let next_gap_var = || {
+            LinearFunction::single_variable(format!(
+                "{GAP_VARIABLE_IDENTIFIER}{}",
+                self.gap_variables_count()
+            ))
+        };
 
         let Constraint {
             left,
@@ -190,22 +199,21 @@ impl Constraints {
 
     /// Normalizes all constraints with respect to a variable
     pub fn normalize(&mut self, var: &Variable) {
-        self.inner
-            .iter_mut()
-            .for_each(|c| c.normalize(var))
+        self.inner.iter_mut().for_each(|c| c.normalize(var))
     }
 
     /// Returns the index of the constraint that maximizes 'var' while minimising the corresponding constant
     pub fn most_restrictive(&self, var: &Variable) -> Option<usize> {
-        self
-            .iter()
+        self.iter()
             .enumerate()
             .filter(|(_, c)| c.right.contains(var) && c.right[var] <= 0.0)
-            .max_by(|(_, Constraint { right: a, .. }), (_, Constraint { right: b, .. })| {
-                let restriction_a = a.constant / a[var];
-                let restriction_b = b.constant / b[var];
-                restriction_a.total_cmp(&restriction_b)
-            })
+            .max_by(
+                |(_, Constraint { right: a, .. }), (_, Constraint { right: b, .. })| {
+                    let restriction_a = a.constant / a[var];
+                    let restriction_b = b.constant / b[var];
+                    restriction_a.total_cmp(&restriction_b)
+                },
+            )
             .map(|(i, _)| i)
     }
 
@@ -224,7 +232,6 @@ impl Constraints {
         self.replace_variable_with(var, &func);
     }
 
-
     pub fn is_valid(&self) -> bool {
         for constraint in self.inner.iter() {
             if !constraint.is_valid_linear_programm() {
@@ -241,12 +248,11 @@ impl Constraints {
         variables
     }
 
-
-	fn replace_variable_with(&mut self, var: &Variable, value: &LinearFunction) {
+    fn replace_variable_with(&mut self, var: &Variable, value: &LinearFunction) {
         for Constraint { right, .. } in &mut self.inner {
             right.replace(var, value)
         }
-	}
+    }
 }
 
 impl std::ops::Index<usize> for Constraints {
@@ -490,7 +496,7 @@ impl std::ops::Neg for Constraint {
         Self {
             left: -self.left,
             right: -self.right,
-            operator: self.operator.inverse()
+            operator: self.operator.inverse(),
         }
     }
 }
