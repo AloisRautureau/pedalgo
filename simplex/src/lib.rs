@@ -120,6 +120,19 @@ impl Simplex {
     pub fn current_point(&self) -> Vec<f32> {
         self.current_state().point()
     }
+    
+    pub fn bfs_point(&self) -> Vec<Vec<f32>> {
+        let mut points = Vec::new();
+        points.push(self.current_point());
+        let mut todo = Vec::<(LinearProgram, String)>::new();
+
+        while !todo.is_empty() {
+            let (programm, index) = todo.pop().unwrap();
+            let point = programm.point();
+            if !points.iter().any(|p| *p == point) {}
+        }
+        points
+    }
 }
 
 impl From<LinearProgram> for Simplex {

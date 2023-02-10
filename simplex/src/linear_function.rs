@@ -1,7 +1,7 @@
-use std::collections::HashMap;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::{alpha1, multispace0};
+use std::collections::HashMap;
 
 use nom::multi::many0;
 use nom::number::complete::float;
@@ -10,6 +10,8 @@ use nom::IResult;
 
 pub type Variable = String;
 pub type Coefficient = f32;
+
+pub const GAP_VARIABLE_IDENTIFIER: char = 'ε';
 
 #[derive(Default, PartialEq, Debug, Clone)]
 pub struct LinearFunction {
@@ -76,9 +78,7 @@ impl LinearFunction {
 
     /// Returns true if the function only has negative coefficients
     pub fn no_positive_coefficient(&self) -> bool {
-        self.coefficients.values()
-            .find(|c| **c > 0.0)
-            .is_none()
+        self.coefficients.values().find(|c| **c > 0.0).is_none()
     }
 
     /// Returns the variable with the maximal coefficient
@@ -92,10 +92,13 @@ impl LinearFunction {
     /// Returns the first variable with a positive coefficient
     pub fn first_positive_coefficient(&self, ordered: bool) -> Option<Variable> {
         let mut coeffs = self.coefficients.clone().into_iter().collect::<Vec<_>>();
-        if ordered { coeffs.sort_by_key(|(v, _)| v.clone()) }
+        if ordered {
+            coeffs.sort_by_key(|(v, _)| v.clone())
+        }
 
-        coeffs.into_iter()
-            .find_map(|(v, c)| if c > 0.0 { Some(v)} else { None })
+        coeffs
+            .into_iter()
+            .find_map(|(v, c)| if c > 0.0 { Some(v) } else { None })
     }
 
     /// Normalizes this linear function with respect to a given variable
@@ -130,7 +133,7 @@ impl LinearFunction {
         // only variables that doesn't start with ε
         self.coefficients
             .iter()
-            .filter(|(var, _)| (*var).chars().next() != Some('ε'))
+            .filter(|(var, _)| (*var).chars().next() != Some(GAP_VARIABLE_IDENTIFIER))
             .map(|(var, _)| var.to_string())
             .collect()
     }
@@ -374,7 +377,10 @@ impl std::str::FromStr for LinearFunction {
                 }
             };
 
-            Ok((rest, (variable.to_string(), if positive { coeff } else { -coeff })))
+            Ok((
+                rest,
+                (variable.to_string(), if positive { coeff } else { -coeff }),
+            ))
         }
 
         let mut linear_func = LinearFunction::zero();

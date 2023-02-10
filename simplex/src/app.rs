@@ -83,7 +83,9 @@ impl eframe::App for SimplexVisualizer {
                             ui.heading("Linear Program");
                             ui.horizontal(|ui| {
                                 egui::ComboBox::from_label("")
-                                    .selected_text((if self.maximize { "MAX" } else { "MIN" }).to_string())
+                                    .selected_text(
+                                        (if self.maximize { "MAX" } else { "MIN" }).to_string(),
+                                    )
                                     .show_ui(ui, |ui| {
                                         ui.selectable_value(&mut self.maximize, true, "MAX");
                                         ui.selectable_value(&mut self.maximize, false, "MIN");
