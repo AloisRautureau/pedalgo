@@ -75,12 +75,6 @@ impl Simplex {
         self.index == 0
     }
 
-    fn is_optimal(&self) -> bool {
-        self.current_state()
-            .linear_function
-            .no_positive_coefficient()
-    }
-
     pub fn next_step(&mut self, use_bland_rule: bool) {
         if !self.current_state().is_optimal() {
             if self.index == self.historic.len() - 1 {
