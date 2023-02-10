@@ -9,11 +9,6 @@ use egui::TextStyle::{Body, Button, Heading, Monospace, Small};
 use egui::{Color32, Context, Style};
 use std::sync::{Arc, Mutex};
 
-const _BLUE: Color32 = Color32::from_rgb(69, 133, 136);
-const _RED: Color32 = Color32::from_rgb(204, 36, 29);
-const _BG: Color32 = Color32::from_rgb(40, 40, 40);
-const _FG: Color32 = Color32::from_rgb(235, 219, 178);
-
 pub struct SimplexVisualizer {
     maximize: bool,
     function_input: String,
@@ -52,7 +47,7 @@ y + 3z <= 600\n
 
         let polyhedron_renderer = self.polyhedron_renderer.clone();
         let callback = Arc::new(egui_glow::CallbackFn::new(move |_info, painter| {
-            polyhedron_renderer.lock().unwrap().draw(painter.gl(), ())
+            polyhedron_renderer.lock().unwrap().draw(painter.gl(), &[0.0; 3])
         }));
         let callback = egui::PaintCallback { rect, callback };
         ui.painter().add(callback);
@@ -121,17 +116,22 @@ impl eframe::App for SimplexVisualizer {
                 egui::Frame::window(&Style::default())
                     .fill(Color32::BLACK)
                     .show(ui, |ui| {
-                        ui.heading("State");
                         ui.vertical(|ui| {
                             if let Some(simplex) = &self.simplex {
+                                ui.heading("Values");
+                                let values = simplex.current_values();
+                                ui.label(values.iter().fold(String::new(), |acc, (v, c)| {
+                                    format!("{acc}{v} = {c}\n")
+                                }));
+
+                                ui.heading("State");
                                 let current_state = simplex.current_state();
-                                ui.colored_label(Color32::LIGHT_GRAY, format!("{current_state}"));
+                                ui.colored_label(Color32::RED, format!("max {}", current_state.linear_function));
+                                ui.label(current_state.constraints.to_string());
                             } else {
-                                ui.colored_label(
-                                    Color32::LIGHT_GRAY,
-                                    "Press RUN to start the algorithm",
-                                );
+                                ui.label("Press RUN to start the algorithm");
                             }
+
                         });
 
                         ui.horizontal(|ui| {

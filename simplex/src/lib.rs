@@ -1,3 +1,4 @@
+#![feature(layout_for_ptr)]
 //! Implementation of the Simplex algorithm
 //! definition of the simplex object
 
@@ -8,6 +9,7 @@ mod polyhedron;
 
 use constraint::Constraints;
 use linear_function::LinearFunction;
+use crate::linear_function::{Coefficient, Variable};
 
 #[derive(Debug, Clone)]
 pub struct LinearProgram {
@@ -65,6 +67,13 @@ impl LinearProgram {
         point
     }
 
+    pub fn values(&self) -> Vec<(Variable, Coefficient)> {
+        let variables = self.non_gap_variables();
+        let values = self.point();
+
+        variables.into_iter().zip(values).collect()
+    }
+
     /// Give every non gap variables of a linear program sorted by alphabetical order
     pub fn non_gap_variables(&self) -> Vec<String> {
         let mut variables = constraint::union(
@@ -105,6 +114,10 @@ impl Simplex {
 
     pub fn current_point(&self) -> Vec<f32> {
         self.current_state().point()
+    }
+
+    pub fn current_values(&self) -> Vec<(Variable, Coefficient)> {
+        self.current_state().values()
     }
 
     pub fn bfs_point(&self) -> Vec<Vec<f32>> {
