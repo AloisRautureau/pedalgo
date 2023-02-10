@@ -102,6 +102,8 @@ impl LinearProgram {
         points
     }
 
+
+    /// Return the Vec of every edge of the linear function
     pub fn lines(&self) -> Vec<(Vec<f32>,Vec<f32>)> {
         let mut edges: Vec<(Vec<f32>,Vec<f32>)> = Vec::new();
         for point in self.bfs_point() {
