@@ -1,6 +1,6 @@
 use nom::branch::alt;
 use nom::bytes::complete::tag;
-use nom::character::complete::{alpha1, multispace0};
+use nom::character::complete::{alpha1, alphanumeric0, multispace0};
 use std::collections::HashMap;
 
 use nom::multi::many0;
@@ -378,9 +378,29 @@ impl std::str::FromStr for LinearFunction {
                     (rest, 1.0)
                 };
 
+            let rest = match preceded(multispace0::<&str, ()>, tag("*"))(rest.clone()) {
+                Ok((rest_mult, _)) => rest_mult,
+                _ => rest
+            };
+
             let (rest, variable) = match preceded(multispace0::<&str, ()>, alpha1)(rest) {
-                Ok((rest, variable)) => (rest, variable),
-                Err(_) if found_coeff => (rest, ""),
+                Ok((rest, variable)) => {
+                    let (rest, variable) = match alphanumeric0::<&str, ()>(rest) {
+                        Ok((rest, end_of_var)) => {
+                            let mut var = variable.to_owned();
+                            var += end_of_var;
+                            (rest, var)
+                        }
+                        _ => {
+                            return Err(nom::Err::Error(nom::error::Error {
+                                input: "aled",
+                                code: nom::error::ErrorKind::Fail,
+                            }))
+                        }
+                    };
+                    (rest, variable)
+                }
+                Err(_) if found_coeff => (rest, "".to_string()),
                 _ => {
                     return Err(nom::Err::Error(nom::error::Error {
                         input: "aled",
@@ -501,5 +521,15 @@ mod tests {
 
         assert_eq!(lf1.name_single_variable().unwrap(), "x".to_string());
         assert_eq!(lf2.name_single_variable().unwrap(), "y".to_string());
+    }
+    #[test]
+    fn test_variable_name_with_alphanumeric1() {
+        let lf = LinearFunction::from_str("3 x0+ 2   y").unwrap();
+        let expected = LinearFunction {
+            constant: 0.0,
+            coefficients: HashMap::from([(String::from("x0"), 3.0), (String::from("y"), 2.0)]),
+        };
+
+        assert_eq!(lf, expected);
     }
 }
