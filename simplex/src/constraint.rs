@@ -308,7 +308,7 @@ pub fn normalized_vec(a: Vec<Vec<f32>>) -> Vec<Vec<f32>> {
         }
         res.push(normalized_point);
     }
-    res
+    res 
 }
 
 
