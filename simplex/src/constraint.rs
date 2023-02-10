@@ -294,14 +294,14 @@ pub fn is_nearly_equal(a:Vec<f32>, b: Vec<f32>) -> bool {
 pub fn normalized_vec(a: Vec<Vec<f32>>) -> Vec<Vec<f32>> {
     let mut res:Vec<Vec<f32>> = Vec::new();
     let mut max = 0.0;
-    for point in a {
+    for point in a.clone().iter() {
         for coord in point.iter() {
             if coord.abs() > max {
                 max = coord.abs();
             }
         }
     }
-    for point in a {
+    for point in a.iter() {
         let mut normalized_point = Vec::new();
         for coord in point.iter() {
             normalized_point.push(coord / max);
