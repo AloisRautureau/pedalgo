@@ -23,14 +23,13 @@ pub struct Simplex {
 }
 
 impl LinearProgram {
-    pub fn pivot(&mut self, use_bland_rule: bool) {
-
-        if let Some(var) = self.linear_function.first_positive_coefficient(use_bland_rule) {
-            let max_constraint_index = self.constraints.most_restrictive(&var).expect(&format!("variable {var} does not appear in any constraint, and is therefore unbounded"));
-
-            self.constraints.pivot(max_constraint_index, &var);
-            self.linear_function.replace(&var, &self.constraints[max_constraint_index].right)
-        }
+    pub fn pivot(&mut self, use_bland_rule: bool, var: String) {
+        let max_constraint_index = self.constraints.most_restrictive(&var).expect(&format!(
+            "variable {var} does not appear in any constraint, and is therefore unbounded"
+        ));
+        self.constraints.pivot(max_constraint_index, &var);
+        self.linear_function
+            .replace(&var, &self.constraints[max_constraint_index].right)
     }
 
     pub fn is_optimal(&self) -> bool {
@@ -69,6 +68,21 @@ impl LinearProgram {
         variables.sort();
         variables
     }
+
+    // Return the Vec of every point of the simplex
+    pub fn bfs_point(&self) -> Vec<Vec<f32>> {
+        let mut points = Vec::new();
+        points.push(self.point());
+        let mut todo = Vec::<(LinearProgram, String)>::new();
+
+        while !todo.is_empty() {
+            let (programm, index) = todo.pop().unwrap();
+            let point = programm.point();
+            // If the point has not already be treated
+            if !points.iter().any(|p| *p == point) {}
+        }
+        points
+    }
 }
 
 impl Simplex {
@@ -77,10 +91,15 @@ impl Simplex {
     }
 
     pub fn next_step(&mut self, use_bland_rule: bool) {
-        if !self.current_state().is_optimal() {
+        if let Some(var) = self
+            .current_state()
+            .linear_function
+            .first_positive_coefficient(use_bland_rule)
+        {
             if self.index == self.historic.len() - 1 {
                 let mut new = self.current_state().clone();
-                new.pivot(use_bland_rule);
+
+                new.pivot(use_bland_rule, var);
                 self.historic.push(new);
             }
             self.index += 1
@@ -100,21 +119,6 @@ impl Simplex {
 
     pub fn current_point(&self) -> Vec<f32> {
         self.current_state().point()
-    }
-
-    pub fn bfs_point(&self) -> Vec<Vec<f32>> {
-        let mut points = Vec::new();
-        points.push(self.current_point());
-        let mut todo = Vec::<(LinearProgram, String)>::new();
-
-        while !todo.is_empty() {
-            let (programm, index) = todo.pop().unwrap();
-            let point = programm.point();
-            if !points.iter().any(|p| *p == point) {
-                
-            }
-        }
-        points
     }
 }
 
@@ -182,9 +186,8 @@ mod tests {
             linear_function: LinearFunction::from_str("x + 2y").unwrap(),
             constraints: Constraints::compile("x <= 200\n 300 - x + 2y >= 0").unwrap(),
         };
-        let mut simplex = Simplex::from(lp);
         assert_eq!(
-            simplex.bfs_point(),
+            lp.bfs_point(),
             vec![vec![0.0, 0.0], vec![200.0, 0.0], vec![200.0, 100.0]]
         );
     }
