@@ -1,4 +1,3 @@
-#![feature(layout_for_ptr)]
 //! Implementation of the Simplex algorithm
 //! definition of the simplex object
 
