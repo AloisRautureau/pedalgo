@@ -564,9 +564,9 @@ mod tests {
             Constraints::compile("x - 2y >= 6 \n 12 + 9x + 3y <= 6\n 1 + 7x - y <= 0").unwrap();
         constraints.normalize(&"y".to_string());
 
-        assert_eq!(constraints.inner[0].right[&"y".to_string()], -1.0);
-        assert_eq!(constraints.inner[1].right[&"y".to_string()], -1.0);
-        assert_eq!(constraints.inner[2].right[&"y".to_string()], -1.0);
+        assert_eq!(constraints.inner[0].right[&"y".to_string()], 1.0);
+        assert_eq!(constraints.inner[1].right[&"y".to_string()], 1.0);
+        assert_eq!(constraints.inner[2].right[&"y".to_string()], 1.0);
     }
 
     #[test]
