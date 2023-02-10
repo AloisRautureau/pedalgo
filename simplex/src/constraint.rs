@@ -29,10 +29,7 @@ pub struct Constraint {
 }
 
 #[derive(Debug, Clone, Default, PartialEq)]
-pub struct Constraints {
-    inner: Vec<Constraint>,
-    nb_var_gap: i32,
-}
+pub struct Constraints { inner: Vec<Constraint> }
 
 impl Operator {
     /// ```rust
@@ -97,7 +94,6 @@ impl Constraints {
     pub fn new() -> Constraints {
         Constraints {
             inner: Vec::new(),
-            nb_var_gap: 0,
         }
     }
 
@@ -134,7 +130,7 @@ impl Constraints {
     /// assert_eq!(constraints[0].right, LinearFunction::new(-35f32, HashMap::from([(String::from("x"), -32f32), (String::from("y"), 12f32), (String::from("z"), 10f32)])));
     /// ```
     pub fn add_constraint(&mut self, constraint: Constraint) {
-        let gap_name = "ε";
+        let next_gap_var = || LinearFunction::single_variable(format!("ε{}", self.gap_variables_count()));
 
         let Constraint {
             left,
@@ -143,48 +139,29 @@ impl Constraints {
         } = constraint;
         match operator {
             Operator::LessEqual | Operator::Less => {
-                let x: LinearFunction = LinearFunction::single_variable(
-                    gap_name.to_owned() + &self.nb_var_gap.to_string(),
-                );
-                self.nb_var_gap += 1;
-
                 let constraint = Constraint {
-                    left: x,
+                    left: next_gap_var(),
                     operator: Operator::Equal,
                     right: right - left,
                 };
                 self.inner.push(constraint);
             }
             Operator::GreaterEqual | Operator::Greater => {
-                let x: LinearFunction = LinearFunction::single_variable(
-                    gap_name.to_owned() + &self.nb_var_gap.to_string(),
-                );
-                self.nb_var_gap += 1;
-
                 let constraint = Constraint {
-                    left: x,
+                    left: next_gap_var(),
                     operator: Operator::Equal,
                     right: left - right,
                 };
                 self.inner.push(constraint);
             }
             Operator::Equal => {
-                let x1: LinearFunction = LinearFunction::single_variable(
-                    gap_name.to_owned() + &self.nb_var_gap.to_string(),
-                );
-                self.nb_var_gap += 1;
-                let x2: LinearFunction = LinearFunction::single_variable(
-                    gap_name.to_owned() + &self.nb_var_gap.to_string(),
-                );
-                self.nb_var_gap += 1;
-
                 let constraint1 = Constraint {
-                    left: x1,
+                    left: next_gap_var(),
                     operator: Operator::Equal,
                     right: right.clone() - left.clone(),
                 };
                 let constraint2 = Constraint {
-                    left: x2,
+                    left: next_gap_var(),
                     operator: Operator::Equal,
                     right: right - left,
                 };
@@ -219,7 +196,7 @@ impl Constraints {
         self
             .iter()
             .enumerate()
-            .filter(|(_, c)| c.right.contains(var))
+            .filter(|(_, c)| c.right.contains(var) && c.right[var] <= 0.0)
             .max_by(|(_, Constraint { right: a, .. }), (_, Constraint { right: b, .. })| {
                 let restriction_a = a.constant / a[var];
                 let restriction_b = b.constant / b[var];

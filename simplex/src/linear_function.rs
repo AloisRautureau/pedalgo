@@ -112,6 +112,11 @@ impl LinearFunction {
             *self += func.clone() * coeff
         }
     }
+
+    /// Returns an iterator over the variables
+    pub fn var_iter(&self) -> impl Iterator<Item = &Variable> {
+        self.coefficients.keys()
+    }
 }
 
 impl std::ops::Index<&Variable> for LinearFunction {
@@ -315,7 +320,6 @@ impl std::str::FromStr for LinearFunction {
     /// let expected = LinearFunction::new(30f32, HashMap::from([(String::from("x"), -32f32), (String::from("z"), 2.5f32)]));
     /// assert_eq!("2.5z + 30 - 32x".parse::<LinearFunction>().unwrap(), expected)
     /// ```
-    /// TODO: Clean this
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         fn parse_variable(input: &str) -> IResult<&str, (Variable, Coefficient)> {
             let (rest, positive) = if let Ok((rest, sign)) =

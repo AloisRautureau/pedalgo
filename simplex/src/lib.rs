@@ -24,7 +24,6 @@ pub struct Simplex {
 
 impl LinearProgram {
     pub fn pivot(&mut self, use_bland_rule: bool) {
-
         if let Some(var) = self.linear_function.first_positive_coefficient(use_bland_rule) {
             let max_constraint_index = self.constraints.most_restrictive(&var).expect(&format!("variable {var} does not appear in any constraint, and is therefore unbounded"));
 

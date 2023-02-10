@@ -24,19 +24,16 @@ impl PolyhedronRenderer {
 
             let (vertex_shader_src, fragment_shader_src) = (
                 r#"
-                    const vec3 verts[6] = vec3[6](
+                    const vec3 verts[3] = vec3[3](
                         vec3(0.0, 1.0, 0.0),
                         vec3(-1.0, -1.0, 0.0),
-                        vec3(1.0, -1.0, 0.0),
-                        vec3(0.0, 1.0, 0.5),
-                        vec3(-1.0, -1.0, 0.5),
-                        vec3(1.0, -1.0, 0.5)
+                        vec3(1.0, -1.0, 0.0)
                     );
                     uniform vec2 u_view_angle;
                     void main() {
                         gl_Position = vec4(verts[gl_VertexID], 1.0);
                         gl_Position.x *= cos(u_view_angle.x);
-                        //gl_Position.y *= sin(u_view_angle.y);
+                        gl_Position.y *= sin(u_view_angle.y);
                     }
                 "#,
                 r#"
@@ -91,7 +88,7 @@ impl PolyhedronRenderer {
         })
     }
 
-    pub fn polyhedron_from_constraints(&mut self, constraints: &Constraints) {
+    pub fn polyhedron_from_constraints(&mut self, _constraints: &Constraints) {
         todo!()
     }
 
@@ -105,7 +102,7 @@ impl PolyhedronRenderer {
                 self.view_angle.y,
             );
             gl.bind_vertex_array(Some(self.vertex_array));
-            gl.draw_arrays(glow::TRIANGLES, 0, 3)
+            gl.draw_arrays(glow::LINE_LOOP, 0, 3)
         }
     }
 }
