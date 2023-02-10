@@ -289,14 +289,28 @@ pub fn is_nearly_equal(a:Vec<f32>, b: Vec<f32>) -> bool {
     true
 }
 
-pub fn normalized_vec(a: Vec<f32>) -> Vec<f32> {
-    let mut res = Vec::new();
-    let sum = a.iter().sum::<f32>();
-    for elem in a {
-        res.push(elem / sum);
+// Normalize all point in a vector
+// choose the factor of normalization to be the maximum of the absolute value of the coordinates
+pub fn normalized_vec(a: Vec<Vec<f32>>) -> Vec<Vec<f32>> {
+    let mut res:Vec<Vec<f32>> = Vec::new();
+    let mut max = 0.0;
+    for point in a {
+        for coord in point.iter() {
+            if coord.abs() > max {
+                max = coord.abs();
+            }
+        }
+    }
+    for point in a {
+        let mut normalized_point = Vec::new();
+        for coord in point.iter() {
+            normalized_point.push(coord / max);
+        }
+        res.push(normalized_point);
     }
     res
 }
+
 
 impl std::fmt::Display for Operator {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
