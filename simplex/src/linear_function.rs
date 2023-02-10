@@ -1,6 +1,6 @@
 use nom::branch::alt;
 use nom::bytes::complete::tag;
-use nom::character::complete::{alpha1, multispace0};
+use nom::character::complete::{alpha1, alphanumeric0, multispace0};
 use std::collections::HashMap;
 
 use nom::multi::many0;
@@ -78,7 +78,7 @@ impl LinearFunction {
 
     /// Returns true if the function only has negative coefficients
     pub fn no_positive_coefficient(&self) -> bool {
-        self.coefficients.values().find(|c| **c > 0.0).is_none()
+        !self.coefficients.values().any(|c| *c > 0.0)
     }
 
     /// Returns the variable with the maximal coefficient
@@ -115,9 +115,9 @@ impl LinearFunction {
         }
     }
 
-    /// Returns an iterator over the variables
+    /// Returns an iterator over the variables that have a coefficient different of 0
     pub fn var_iter(&self) -> impl Iterator<Item = &Variable> {
-        self.coefficients.keys()
+        self.coefficients.keys().filter(move |var| self[*var] != 0.0)
     }
 
     pub fn is_one_normalized_var(&self) -> bool {
@@ -126,6 +126,12 @@ impl LinearFunction {
             .filter(|(_, coeff)| **coeff == 1.0)
             .count()
             == 1
+            && self
+                .coefficients
+                .iter()
+                .filter(|(_, coeff)| **coeff != 1.0 && **coeff != 0.0)
+                .count()
+                == 0
             && self.constant == 0.0
     }
 
@@ -133,16 +139,22 @@ impl LinearFunction {
         // only variables that doesn't start with ε
         self.coefficients
             .iter()
-            .filter(|(var, _)| (*var).chars().next() != Some(GAP_VARIABLE_IDENTIFIER))
+            .filter(|(var, _)| !(*var).starts_with(GAP_VARIABLE_IDENTIFIER))
             .map(|(var, _)| var.to_string())
             .collect()
     }
 
-    pub fn name_single_variable(&self) -> Variable {
+    pub fn name_single_variable(&self) -> Option<Variable> {
         if !self.is_one_normalized_var() {
-            panic!("Not a single variable linear function");
+            return None;
         }
-        self.coefficients.keys().next().unwrap().to_string()
+        self.coefficients.iter().find_map(|(var, coeff)| {
+            if *coeff == 1.0 {
+                Some(var.to_string())
+            } else {
+                None
+            }
+        })
     }
 }
 
@@ -366,9 +378,29 @@ impl std::str::FromStr for LinearFunction {
                     (rest, 1.0)
                 };
 
+            let rest = match preceded(multispace0::<&str, ()>, tag("*"))(rest.clone()) {
+                Ok((rest_mult, _)) => rest_mult,
+                _ => rest
+            };
+
             let (rest, variable) = match preceded(multispace0::<&str, ()>, alpha1)(rest) {
-                Ok((rest, variable)) => (rest, variable),
-                Err(_) if found_coeff => (rest, ""),
+                Ok((rest, variable)) => {
+                    let (rest, variable) = match alphanumeric0::<&str, ()>(rest) {
+                        Ok((rest, end_of_var)) => {
+                            let mut var = variable.to_owned();
+                            var += end_of_var;
+                            (rest, var)
+                        }
+                        _ => {
+                            return Err(nom::Err::Error(nom::error::Error {
+                                input: "aled",
+                                code: nom::error::ErrorKind::Fail,
+                            }))
+                        }
+                    };
+                    (rest, variable)
+                }
+                Err(_) if found_coeff => (rest, "".to_string()),
                 _ => {
                     return Err(nom::Err::Error(nom::error::Error {
                         input: "aled",
@@ -471,10 +503,33 @@ mod tests {
     }
 
     #[test]
-    fn test_name_single_variable() {
-        let lf = LinearFunction::from_str("x+0").unwrap();
-        let expected = "x".to_string();
+    fn test_is_one_normalized_var() {
+        let lf1 = LinearFunction::from_str("x+0+0z").unwrap();
+        let lf2 = LinearFunction::from_str("y+2").unwrap();
+        let lf3 = LinearFunction::from_str("x+0+0z+1y").unwrap();
+        let lf4 = LinearFunction::from_str("x+0z").unwrap();
+        assert!(LinearFunction::is_one_normalized_var(&lf1));
+        assert!(!LinearFunction::is_one_normalized_var(&lf2));
+        assert!(!LinearFunction::is_one_normalized_var(&lf3));
+        assert!(LinearFunction::is_one_normalized_var(&lf4));
+    }
 
-        assert_eq!(lf.name_single_variable(), expected);
+    #[test]
+    fn test_name_single_variable() {
+        let lf1 = LinearFunction::from_str("x + 0").unwrap();
+        let lf2 = LinearFunction::from_str("y + 0z + 0 ").unwrap();
+
+        assert_eq!(lf1.name_single_variable().unwrap(), "x".to_string());
+        assert_eq!(lf2.name_single_variable().unwrap(), "y".to_string());
+    }
+    #[test]
+    fn test_variable_name_with_alphanumeric1() {
+        let lf = LinearFunction::from_str("3 x0+ 2   y").unwrap();
+        let expected = LinearFunction {
+            constant: 0.0,
+            coefficients: HashMap::from([(String::from("x0"), 3.0), (String::from("y"), 2.0)]),
+        };
+
+        assert_eq!(lf, expected);
     }
 }

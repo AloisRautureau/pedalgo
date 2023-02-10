@@ -100,11 +100,9 @@ impl eframe::App for SimplexVisualizer {
                                     .unwrap_or(LinearFunction::zero());
 
                                 // Run simplex
-                                self.simplex = Some(constraints.maximize(&if self.maximize {
-                                    function
-                                } else {
-                                    -function
-                                }));
+                                let simplex = constraints.maximize(&if self.maximize { function } else { -function });
+                                self.polyhedron_renderer.lock().unwrap().polyhedron_from_constraints(&simplex);
+                                self.simplex = Some(simplex);
                             }
                         });
                     })

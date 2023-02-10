@@ -10,7 +10,7 @@ use nom::multi::many_till;
 
 // Variable globale
 
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq, Copy)]
 pub enum Operator {
     #[default]
     Equal,
@@ -275,6 +275,18 @@ pub fn union<T: Clone + PartialEq>(a: Vec<T>, b: Vec<T>) -> Vec<T> {
         }
     }
     res
+}
+
+pub fn is_nearly_equal(a:Vec<f32>, b: Vec<f32>) -> bool {
+    if a.len() != b.len() {
+        return false;
+    }
+    for i in 0..a.len() {
+        if (a[i] - b[i]).abs() > 0.001 {
+            return false;
+        }
+    }
+    true
 }
 
 impl std::fmt::Display for Operator {
@@ -542,7 +554,6 @@ mod tests {
 
     #[test]
     fn test_normalize() {
-        use std::str::FromStr;
         let mut constraints =
             Constraints::compile("x - 2y >= 6 \n 12 + 9x + 3y <= 6\n 1 + 7x - y <= 0").unwrap();
         constraints.normalize(&"y".to_string());
