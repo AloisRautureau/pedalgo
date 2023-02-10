@@ -542,7 +542,6 @@ mod tests {
 
     #[test]
     fn test_normalize() {
-        use std::str::FromStr;
         let mut constraints =
             Constraints::compile("x - 2y >= 6 \n 12 + 9x + 3y <= 6\n 1 + 7x - y <= 0").unwrap();
         constraints.normalize(&"y".to_string());
