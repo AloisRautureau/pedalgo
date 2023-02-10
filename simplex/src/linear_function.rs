@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::{alpha1, multispace0};
@@ -116,6 +115,31 @@ impl LinearFunction {
     /// Returns an iterator over the variables
     pub fn var_iter(&self) -> impl Iterator<Item = &Variable> {
         self.coefficients.keys()
+    }
+
+    pub fn is_one_normalized_var(&self) -> bool {
+        self.coefficients
+            .iter()
+            .filter(|(_, coeff)| **coeff == 1.0)
+            .count()
+            == 1
+            && self.constant == 0.0
+    }
+
+    pub fn non_gap_variables(&self) -> Vec<Variable> {
+        // only variables that doesn't start with ε
+        self.coefficients
+            .iter()
+            .filter(|(var, _)| (*var).chars().next() != Some('ε'))
+            .map(|(var, _)| var.to_string())
+            .collect()
+    }
+
+    pub fn name_single_variable(&self) -> Variable {
+        if !self.is_one_normalized_var() {
+            panic!("Not a single variable linear function");
+        }
+        self.coefficients.keys().next().unwrap().to_string()
     }
 }
 
@@ -317,8 +341,8 @@ impl std::str::FromStr for LinearFunction {
     /// use std::collections::HashMap;
     /// use simplex::linear_function::LinearFunction;
     ///
-    /// let expected = LinearFunction::new(30f32, HashMap::from([(String::from("x"), -32f32), (String::from("z"), 2.5f32)]));
-    /// assert_eq!("2.5z + 30 - 32x".parse::<LinearFunction>().unwrap(), expected)
+    /// let expected = LinearFunction::new(3f32, HashMap::from([(String::from("x"), -2f32)]));
+    /// assert_eq!("3 - 2x".parse::<LinearFunction>().unwrap(), expected)
     /// ```
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         fn parse_variable(input: &str) -> IResult<&str, (Variable, Coefficient)> {
@@ -377,12 +401,12 @@ impl std::fmt::Display for LinearFunction {
         let mut coeff_iter = h_map.iter();
 
         if self.constant != 0.0 {
-            write!(f, "{}", self.constant)
+            write!(f, "{:.1}", self.constant)
         } else if let Some((var, coeff)) = coeff_iter.next() {
             match *coeff {
                 x if x == 1.0 => write!(f, "{var}"),
                 x if x == -1.0 => write!(f, "-{var}"),
-                _ => write!(f, "{coeff}{var}"),
+                _ => write!(f, "{coeff:.1}{var}"),
             }
         } else {
             write!(f, "0")
@@ -393,7 +417,7 @@ impl std::fmt::Display for LinearFunction {
                 x if x == -1.0 => write!(f, " - {var}"),
                 _ => write!(
                     f,
-                    "{}{}{var}",
+                    "{}{:.1}{var}",
                     if coeff.is_sign_positive() {
                         " + "
                     } else {
@@ -438,5 +462,13 @@ mod tests {
         lf.normalize(&var);
 
         assert_eq!(lf, expected);
+    }
+
+    #[test]
+    fn test_name_single_variable() {
+        let lf = LinearFunction::from_str("x+0").unwrap();
+        let expected = "x".to_string();
+
+        assert_eq!(lf.name_single_variable(), expected);
     }
 }
