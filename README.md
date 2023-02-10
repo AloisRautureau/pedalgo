@@ -34,7 +34,7 @@ About testing, we have tested the major part of the code. To run the tests, you 
 On the website, you can enter a linear problem (with a text) and the programm will solve it. According to the dimension of the problem the output will be different :
 - 2D : The output will be a 2D graph with the points of the simplex and the solution.
 - 3D : The output will be a 3D graph with the points of the simplex and the solution.
-- >=4D : The output will be a terminal-print like. Step by step you can see the point where you are and the next point where you go.
+- \>=4D : The output will be a terminal-print like. Step by step you can see the point where you are and the next point where you go.
 
 ---
 
