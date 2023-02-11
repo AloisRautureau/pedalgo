@@ -1,12 +1,12 @@
 use crate::constraint::Constraints;
 use crate::linear_function::LinearFunction;
 use crate::polyhedron::PolyhedronRenderer;
-use crate::Simplex;
+use crate::{Simplex, SimplexError};
 use eframe::{egui_glow, Frame};
 use egui::FontFamily::Proportional;
-use egui::{FontId, Sense};
 use egui::TextStyle::{Body, Button, Heading, Monospace, Small};
 use egui::{Color32, Context, Style};
+use egui::{FontId, Sense};
 use std::sync::{Arc, Mutex};
 
 pub struct SimplexVisualizer {
@@ -14,7 +14,7 @@ pub struct SimplexVisualizer {
     function_input: String,
     constraints_input: String,
 
-    simplex: Option<Simplex>,
+    simplex: Option<Result<Simplex, SimplexError>>,
     polyhedron_renderer: Arc<Mutex<PolyhedronRenderer>>,
 }
 
@@ -40,7 +40,8 @@ y + 3z <= 600\n
     }
 
     fn draw_polyhedron(&mut self, ui: &mut egui::Ui) {
-        let (rect, response) = ui.allocate_exact_size(ui.available_size_before_wrap(), Sense::drag());
+        let (rect, response) =
+            ui.allocate_exact_size(ui.available_size_before_wrap(), Sense::drag());
         ui.expand_to_include_rect(rect);
 
         // Check angle
@@ -50,8 +51,12 @@ y + 3z <= 600\n
         let callback = egui::PaintCallback {
             rect,
             callback: Arc::new(egui_glow::CallbackFn::new(move |info, painter| {
-                polyhedron_renderer.lock().unwrap().draw(painter.gl(), info.screen_size_px, &[0.0; 3])
-            }))
+                polyhedron_renderer.lock().unwrap().draw(
+                    painter.gl(),
+                    info.screen_size_px,
+                    &[0.0; 3],
+                )
+            })),
         };
         ui.painter().add(callback);
     }
@@ -102,11 +107,17 @@ impl eframe::App for SimplexVisualizer {
                                     .parse()
                                     .unwrap_or(LinearFunction::zero());
 
-                                // Run simplex
-                                let simplex = constraints.maximize(&if self.maximize { function } else { -function });
-                                println!("{}", simplex.current_state());
-                                self.polyhedron_renderer.lock().unwrap().polyhedron_from_constraints(&simplex);
-                                self.simplex = Some(simplex);
+                                // Create simplex
+                                self.simplex = Some(constraints.maximize(&if self.maximize {
+                                    function
+                                } else {
+                                    -function
+                                }));
+                                self.polyhedron_renderer
+                                    .lock()
+                                    .unwrap()
+                                    .polyhedron_from_constraints(&constraints);
+
                             }
                         });
                     })
@@ -119,33 +130,45 @@ impl eframe::App for SimplexVisualizer {
                     .fill(Color32::BLACK)
                     .show(ui, |ui| {
                         ui.vertical(|ui| {
-                            if let Some(simplex) = &self.simplex {
-                                ui.heading("Values");
-                                let values = simplex.current_values();
-                                ui.label(values.iter().fold(String::new(), |acc, (v, c)| {
-                                    format!("{acc}{v} = {c}\n")
-                                }));
+                            match &self.simplex {
+                                Some(Ok(simplex)) => {
+                                    ui.heading("Values");
+                                    let values = simplex.current_values();
+                                    ui.label(values.iter().fold(String::new(), |acc, (v, c)| {
+                                        format!("{acc}{v} = {c}\n")
+                                    }));
 
-                                ui.heading("State");
-                                let current_state = simplex.current_state();
-                                ui.colored_label(Color32::RED, format!("max {}", current_state.linear_function));
-                                ui.label(current_state.constraints.to_string());
-                            } else {
-                                ui.label("Press RUN to start the algorithm");
+                                    ui.heading("State");
+                                    let current_state = simplex.current_state();
+                                    ui.colored_label(
+                                        Color32::RED,
+                                        format!("max {}", current_state.linear_function),
+                                    );
+                                    ui.label(current_state.constraints.to_string());
+                                }
+                                Some(Err(SimplexError::Unbounded)) => {
+                                    ui.colored_label(Color32::RED, "This program is unbounded");
+                                }
+                                None => {
+                                    ui.label("Press RUN to start the algorithm");
+                                }
+                                _ => {
+                                    ui.label("How did we get there ?");
+
+                                }
                             }
-
                         });
 
                         ui.horizontal(|ui| {
                             // Previous button
                             if ui.add(egui::Button::new("PREVIOUS")).clicked() {
-                                if let Some(simplex) = &mut self.simplex {
+                                if let Some(Ok(simplex)) = &mut self.simplex {
                                     simplex.previous_step();
                                 }
                             }
                             // Next button
                             if ui.add(egui::Button::new("NEXT")).clicked() {
-                                if let Some(simplex) = &mut self.simplex {
+                                if let Some(Ok(simplex)) = &mut self.simplex {
                                     simplex.next_step(true);
                                 }
                             }

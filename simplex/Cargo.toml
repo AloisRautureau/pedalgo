@@ -9,6 +9,7 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
+itertools = "0.10.5"
 num-traits = "0.2.15"
 glm = "0.2.3"
 nom = "7.1.3"

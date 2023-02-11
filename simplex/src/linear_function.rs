@@ -1,7 +1,7 @@
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::{alpha1, alphanumeric0, multispace0};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use nom::multi::many0;
 use nom::number::complete::float;
@@ -117,7 +117,12 @@ impl LinearFunction {
 
     /// Returns an iterator over the variables that have a coefficient different of 0
     pub fn var_iter(&self) -> impl Iterator<Item = &Variable> {
-        self.coefficients.keys().filter(move |var| self[*var] != 0.0)
+        self.coefficients.keys().filter(|var| self[var] != 0.0)
+    }
+    pub fn into_var_iter(self) -> impl Iterator<Item = Variable> {
+        self.coefficients
+            .into_iter()
+            .filter_map(|(var, coeff)| if coeff != 0.0 { Some(var) } else { None })
     }
 
     pub fn is_one_normalized_var(&self) -> bool {
@@ -136,11 +141,9 @@ impl LinearFunction {
     }
 
     pub fn non_gap_variables(&self) -> Vec<Variable> {
-        // only variables that doesn't start with ε
         self.coefficients
             .iter()
-            .filter(|(var, _)| !(*var).starts_with(GAP_VARIABLE_IDENTIFIER))
-            .map(|(var, _)| var.to_string())
+            .filter_map(|(var, _)| if !var.starts_with(GAP_VARIABLE_IDENTIFIER) { Some(var.to_string()) } else { None })
             .collect()
     }
 
@@ -378,9 +381,9 @@ impl std::str::FromStr for LinearFunction {
                     (rest, 1.0)
                 };
 
-            let rest = match preceded(multispace0::<&str, ()>, tag("*"))(rest.clone()) {
+            let rest = match preceded(multispace0::<&str, ()>, tag("*"))(rest) {
                 Ok((rest_mult, _)) => rest_mult,
-                _ => rest
+                _ => rest,
             };
 
             let (rest, variable) = match preceded(multispace0::<&str, ()>, alpha1)(rest) {
@@ -411,7 +414,7 @@ impl std::str::FromStr for LinearFunction {
 
             Ok((
                 rest,
-                (variable.to_string(), if positive { coeff } else { -coeff }),
+                (variable, if positive { coeff } else { -coeff }),
             ))
         }
 

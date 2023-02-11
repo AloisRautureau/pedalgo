@@ -2,11 +2,13 @@
 use crate::linear_function::LinearFunction;
 use crate::linear_function::Variable;
 use crate::linear_function::GAP_VARIABLE_IDENTIFIER;
-use crate::{LinearProgram, Simplex};
+use crate::{LinearProgram, Simplex, SimplexError};
+use itertools::Itertools;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::anychar;
 use nom::multi::many_till;
+use std::collections::{HashMap, HashSet, VecDeque};
 
 // Variable globale
 
@@ -87,15 +89,16 @@ impl Constraint {
         }
     }
 
-    pub fn is_valid_linear_programm(&self) -> bool {
+    pub fn is_valid_linear_program(&self) -> bool {
         self.left.is_one_normalized_var() && self.operator == Operator::Equal
     }
 
     pub fn non_gap_variables(&self) -> Vec<Variable> {
-        union(
-            self.left.non_gap_variables(),
-            self.right.non_gap_variables(),
-        )
+        let mut var_set: HashSet<Variable> = HashSet::from_iter(self.right.non_gap_variables());
+        for var in self.left.non_gap_variables() {
+            var_set.insert(var);
+        }
+        var_set.into_iter().collect()
     }
 }
 
@@ -105,11 +108,17 @@ impl Constraints {
         Constraints { inner: Vec::new() }
     }
 
-    pub fn maximize(&self, to_maximize: &LinearFunction) -> Simplex {
-        Simplex::from(LinearProgram {
+    pub fn maximize(&self, to_maximize: &LinearFunction) -> Result<Simplex, SimplexError> {
+        let program = LinearProgram {
             linear_function: to_maximize.clone(),
-            constraints: self.clone(),
-        })
+            constraints: self.clone()
+        };
+
+        if program.is_unbounded() {
+            Err(SimplexError::Unbounded)
+        } else {
+            Ok(Simplex::from(program))
+        }
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &Constraint> {
@@ -234,24 +243,113 @@ impl Constraints {
 
     pub fn is_valid(&self) -> bool {
         for constraint in self.inner.iter() {
-            if !constraint.is_valid_linear_programm() {
+            if !constraint.is_valid_linear_program() {
                 return false;
             }
         }
         true
     }
     pub fn non_gap_variables(&self) -> Vec<Variable> {
-        let mut variables = Vec::new();
-        for constraint in self.inner.iter() {
-            variables = union(variables, constraint.non_gap_variables());
+        let mut var_set = HashSet::new();
+        for c in self.iter() {
+            for v in c.non_gap_variables() {
+                var_set.insert(v);
+            }
         }
-        variables
+        var_set.into_iter().collect()
     }
 
     fn replace_variable_with(&mut self, var: &Variable, value: &LinearFunction) {
         for Constraint { right, .. } in &mut self.inner {
             right.replace(var, value)
         }
+    }
+
+    /// Returns a list of vertices that can be used directly to render the polyhedron
+    /// corresponding to the constraints in OpenGL
+    /// This polyhedron is centered around (0, 0, 0)
+    pub fn polyhedron(&self) -> Vec<[f32; 3]> {
+        let mut polyhedron = vec![];
+        let mut max_value = 0f32;
+        let mut center = [0f32; 3];
+
+        let variables = self.non_gap_variables();
+        let dummy_program = LinearProgram {
+            linear_function: LinearFunction::new(
+                0.0,
+                HashMap::from_iter(variables.iter().map(|v| (v.to_string(), 1.0))),
+            ),
+            constraints: self.clone(),
+        };
+
+        // Do a BFS on the dummy simplex instance
+        let mut queue = VecDeque::from([dummy_program]);
+        let mut seen = vec![];
+        let points_nearly_equal = |a: &Vec<f32>, b: &Vec<f32>| {
+            for (a, b) in a.iter().zip(b) {
+                if (a - b).abs() <= 0.000001 { return true }
+            }
+            false
+        };
+        while let Some(program) = queue.pop_back() {
+            let current_point = program.point();
+            seen.push(current_point.clone());
+
+            // Use each variable as a pivot one after the other, and collect each resulting point
+            let mut adjacent_points = vec![];
+            for var in program.out_of_base_variables() {
+                let mut p = program.clone();
+                if p.pivot(var).is_err() {
+                    continue;
+                }
+                let point = p.point();
+
+                // If the point hasn't been visited before, we push it onto the stack
+                if !seen.contains(&point) {
+                    queue.push_front(p);
+                }
+                adjacent_points.push(point);
+            }
+
+            // Useful calculations for centering/scaling
+            let vec_to_3d_point = |p: &Vec<f32>| {
+                let mut point = [0.0; 3];
+                for (v, dest) in p.iter().take(3).zip(point.iter_mut()) {
+                    *dest = *v
+                }
+                point
+            };
+            let current_point_3d = vec_to_3d_point(&current_point);
+
+            for (i, v) in current_point_3d.iter().enumerate() {
+                center[i] += *v;
+                if v.abs() >= max_value {
+                    max_value = v.abs();
+                }
+            }
+
+            // Then find every permutation containing the parent point, and add them to the polyhedron
+            // TODO: Some of those are definitely wrong. They are hidden, but should be taken care of before turning alpha channel on
+            for perm in adjacent_points.iter().permutations(2) {
+                polyhedron.push(current_point_3d);
+                for point in perm {
+                    polyhedron.push(vec_to_3d_point(point))
+                }
+            }
+        }
+
+        // We then center and scale the polyhedron
+        for value in center.iter_mut() {
+            *value /= seen.len() as f32
+        }
+        for vertex in polyhedron.iter_mut() {
+            for (value, offset) in vertex.iter_mut().zip(center.iter_mut()) {
+                *value -= *offset;
+                *value /= max_value;
+            }
+        }
+
+        polyhedron
     }
 }
 
@@ -265,50 +363,6 @@ impl std::ops::IndexMut<usize> for Constraints {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         &mut self.inner[index]
     }
-}
-
-pub fn union<T: Clone + PartialEq>(a: Vec<T>, b: Vec<T>) -> Vec<T> {
-    let mut res = a.clone();
-    for elem in b {
-        if !a.contains(&elem) {
-            res.push(elem);
-        }
-    }
-    res
-}
-
-pub fn is_nearly_equal(a:Vec<f32>, b: Vec<f32>) -> bool {
-    if a.len() != b.len() {
-        return false;
-    }
-    for i in 0..a.len() {
-        if (a[i] - b[i]).abs() > 0.001 {
-            return false;
-        }
-    }
-    true
-}
-
-// Normalize all point in a vector
-// choose the factor of normalization to be the maximum of the absolute value of the coordinates
-pub fn normalized_vec(a: Vec<Vec<f32>>) -> Vec<Vec<f32>> {
-    let mut res:Vec<Vec<f32>> = Vec::new();
-    let mut max = 0.0;
-    for point in a.clone().iter() {
-        for coord in point.iter() {
-            if coord.abs() > max {
-                max = coord.abs();
-            }
-        }
-    }
-    for point in a.iter() {
-        let mut normalized_point = Vec::new();
-        for coord in point.iter() {
-            normalized_point.push(coord / max);
-        }
-        res.push(normalized_point);
-    }
-    res 
 }
 
 
@@ -598,5 +652,4 @@ mod tests {
         c -= l_f;
         assert_eq!(c, expected);
     }
-
 }
