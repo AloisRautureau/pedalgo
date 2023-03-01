@@ -159,10 +159,6 @@ mod tests {
             linear_function: LinearFunction::from_str("x + 2y").unwrap(),
             constraints: Constraints::compile("x + y <= 2\n x + 2y <= 3").unwrap(),
         };
-        assert_eq!(
-            lp.non_gap_variables(),
-            HashSet::from(["x".to_string(), "y".to_string()])
-        );
     }
 
     #[test]

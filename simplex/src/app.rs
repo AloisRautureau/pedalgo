@@ -117,7 +117,6 @@ impl eframe::App for SimplexVisualizer {
                                     .lock()
                                     .unwrap()
                                     .polyhedron_from_constraints(&constraints);
-
                             }
                         });
                     })
@@ -129,33 +128,30 @@ impl eframe::App for SimplexVisualizer {
                 egui::Frame::window(&Style::default())
                     .fill(Color32::BLACK)
                     .show(ui, |ui| {
-                        ui.vertical(|ui| {
-                            match &self.simplex {
-                                Some(Ok(simplex)) => {
-                                    ui.heading("Values");
-                                    let values = simplex.current_values();
-                                    ui.label(values.iter().fold(String::new(), |acc, (v, c)| {
-                                        format!("{acc}{v} = {c}\n")
-                                    }));
+                        ui.vertical(|ui| match &self.simplex {
+                            Some(Ok(simplex)) => {
+                                ui.heading("Values");
+                                let values = simplex.current_values();
+                                ui.label(values.iter().fold(String::new(), |acc, (v, c)| {
+                                    format!("{acc}{v} = {c}\n")
+                                }));
 
-                                    ui.heading("State");
-                                    let current_state = simplex.current_state();
-                                    ui.colored_label(
-                                        Color32::RED,
-                                        format!("max {}", current_state.linear_function),
-                                    );
-                                    ui.label(current_state.constraints.to_string());
-                                }
-                                Some(Err(SimplexError::Unbounded)) => {
-                                    ui.colored_label(Color32::RED, "This program is unbounded");
-                                }
-                                None => {
-                                    ui.label("Press RUN to start the algorithm");
-                                }
-                                _ => {
-                                    ui.label("How did we get there ?");
-
-                                }
+                                ui.heading("State");
+                                let current_state = simplex.current_state();
+                                ui.colored_label(
+                                    Color32::RED,
+                                    format!("max {}", current_state.linear_function),
+                                );
+                                ui.label(current_state.constraints.to_string());
+                            }
+                            Some(Err(SimplexError::Unbounded)) => {
+                                ui.colored_label(Color32::RED, "This program is unbounded");
+                            }
+                            None => {
+                                ui.label("Press RUN to start the algorithm");
+                            }
+                            _ => {
+                                ui.label("How did we get there ?");
                             }
                         });
 
